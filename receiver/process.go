@@ -10,11 +10,13 @@ import (
 	"github.com/imroc/req"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
+	"github.com/valyala/fastjson"
 )
 
-type process struct {
-	Currency string `json:"currency"`
-	Fiat     string `json:"fiat"`
+type requestBlocks struct {
+	Currency []string `json:"currency"`
+	Fiat     []string `json:"fiat"`
+	API      string   `json:"api"`
 }
 
 func (r *Receiver) deliveryChannel() (<-chan amqp.Delivery, error) {
@@ -53,16 +55,50 @@ func (r *Receiver) Processing() error {
 	}
 }
 
-func (r *Receiver) schedule(d amqp.Delivery) {
+func (r *Receiver) schedule() {
+	t := time.NewTicker(time.Minute * 5)
+	for ; ; <-t.C {
+		var blocks requestBlocks
+		blocks.API = "cmc"
 
+		checkMap := make(map[string]struct{})
+		m := r.store.Get()
+		for currency, fiat := range m {
+			blocks.Currency = append(blocks.Currency, string(currency))
+			for f := range fiat {
+				checkMap[string(f)] = struct{}{}
+			}
+		}
+		
+		for k := range checkMap {
+			blocks.Fiat = append(blocks.Fiat, k)
+		}
+	}
 }
 
-func doRequest(p process) error {
+func doRequest(b *requestBlocks) error {
 	rq := req.New()
-	_, err := rq.Post(os.Getenv("PRICES"), req.BodyJSON(&p))
+	resp, err := rq.Post(os.Getenv("PRICES"), req.BodyJSON(&b))
 	if err != nil {
 		return err
 	}
+
+	
+	return nil
+}
+
+func respFastJSON(b []byte) error {
+	var p fastjson.Parser
+	parsed, err := p.ParseBytes(b)
+	if err != nil {
+		return errors.Wrap(err, "parseBytes")
+	}
+
+	o := parsed.GetObject("RAW")
+	o.Visit(func(k []byte, v *fastjson.Value) {
+
+	})
+
 	return nil
 }
 
