@@ -15,8 +15,6 @@ type process struct {
 	Fiat     string `json:"fiat"`
 }
 
-var t = time.NewTicker(time.Second * 3)
-
 func (r *Receiver) ProcessChannel() (<-chan amqp.Delivery, error) {
 	msgs, err := r.rabbitMQ.Channel.Consume(
 		r.rabbitMQ.Queue.Name,
@@ -40,15 +38,17 @@ func (r *Receiver) schedule(d amqp.Delivery) {
 
 func doRequest(p process) error {
 	rq := req.New()
-	resp, err := rq.Post(os.Getenv("PRICES"), req.BodyJSON(&p))
+	_, err := rq.Post(os.Getenv("PRICES"), req.BodyJSON(&p))
 	if err != nil {
 		return err
 	}
-
+	return nil
 }
 
 func hunting202(url string) error {
 	var err error
+	t := time.NewTicker(time.Second * 3)
+
 	counter := 0
 	for ; counter != 3; <-t.C {
 		err = checkURL(url)
@@ -60,7 +60,7 @@ func hunting202(url string) error {
 	}
 
 	if err != nil {
-		return errors.Wrap(errors.New("no 202 statusCodes"), "hunting202")
+		return errors.Wrap(errors.New("no 202 status codes"), "hunting202")
 	}
 
 	return nil

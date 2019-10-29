@@ -59,9 +59,7 @@ func NewServer() (*Server, error) {
 	}
 	server.rabbitMQ = r
 
-	if err := server.initBaseRoute(); err != nil {
-		return nil, err
-	}
+	server.initBaseRoute()
 	server.initAlertAPI()
 
 	return &server, nil
@@ -80,11 +78,12 @@ func (s *Server) Finalize() error {
 	return nil
 }
 
-func (s *Server) initBaseRoute() error {
+func (s *Server) initBaseRoute() {
 	s.G = s.R.Group("/api/v1")
-	s.ac = &apiContoller{channel: s.rabbitMQ.Channel}
-
-	return nil
+	s.ac = &apiContoller{
+		channel: s.rabbitMQ.Channel,
+		queue:   s.rabbitMQ.Queue,
+	}
 }
 
 func respondWithJSON(ctx *routing.Context, code int, payload map[string]interface{}) {
