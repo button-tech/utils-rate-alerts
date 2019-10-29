@@ -2,12 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"
-	"time"
-
-	"github.com/pkg/errors"
-	routing "github.com/qiangxue/fasthttp-routing"
 )
 
 type alert struct {
@@ -17,8 +14,6 @@ type alert struct {
 	Condition string `json:"condition"`
 	URL       string `json:"url"`
 }
-
-var t = time.NewTicker(time.Second * 3)
 
 func (ac *apiContoller) alert(ctx *routing.Context) error {
 	var (
@@ -46,28 +41,6 @@ func (ac *apiContoller) alert(ctx *routing.Context) error {
 	return nil
 }
 
-func (s *Server) queueSettings() error {
-	q, err := s.ac.channel.QueueDeclare(
-		"alert",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return errors.Wrap(err, "queue settings init")
-	}
-	s.ac.queue = q
-
-	return nil
-}
-
-func (s *Server) initAlertAPI() error {
-	if err := s.queueSettings(); err != nil {
-		return err
-	}
+func (s *Server) initAlertAPI() {
 	s.G.Get("/alert", s.ac.alert)
-
-	return nil
 }

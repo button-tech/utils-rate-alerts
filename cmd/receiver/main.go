@@ -12,7 +12,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	c, err := r.Process()
+	c, err := r.ProcessChannel()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,8 +21,9 @@ func main() {
 	go func() {
 		for msg := range c {
 			log.Printf("Received a message: %s", msg.Body)
+
 		}
 	}()
 
-	select{}
+	select {}
 }

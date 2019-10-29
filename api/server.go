@@ -2,21 +2,20 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/button-tech/rate-alerts/rabbitmq"
 	"github.com/pkg/errors"
-	"log"
-	"net/http"
-	"os"
-
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"
+	"log"
+	"net/http"
 )
 
 type Server struct {
 	R        *routing.Router
 	G        *routing.RouteGroup
 	ac       *apiContoller
-	rabbitMQ *amqp.Connection
+	rabbitMQ *rabbitmq.Instance
 }
 
 func NewServer() (*Server, error) {
@@ -54,26 +53,23 @@ func NewServer() (*Server, error) {
 		return nil
 	})
 
-	conn, err := amqp.Dial(os.Getenv("RABBIT_MQ_CONN_URL"))
+	r, err := rabbitmq.NewInstance()
 	if err != nil {
-		return nil, errors.Wrap(err, "open rabbitmq connection")
+		return nil, errors.Wrap(err, "rabbitMQ instance declaration")
 	}
-	server.rabbitMQ = conn
+	server.rabbitMQ = r
 
 	if err := server.initBaseRoute(); err != nil {
 		return nil, err
 	}
-
-	if err := server.initAlertAPI(); err != nil {
-		return nil, err
-	}
+	server.initAlertAPI()
 
 	return &server, nil
 }
 
 func (s *Server) Finalize() error {
 	log.Println("rabbitMQ connection close...")
-	if err := s.rabbitMQ.Close(); err != nil {
+	if err := s.rabbitMQ.Conn.Close(); err != nil {
 		return err
 	}
 
@@ -86,12 +82,7 @@ func (s *Server) Finalize() error {
 
 func (s *Server) initBaseRoute() error {
 	s.G = s.R.Group("/api/v1")
-
-	ch, err := s.rabbitMQ.Channel()
-	if err != nil {
-		return errors.Wrap(err, "open rabbitMQ channel")
-	}
-	s.ac = &apiContoller{channel: ch}
+	s.ac = &apiContoller{channel: s.rabbitMQ.Channel}
 
 	return nil
 }

@@ -1,66 +1,39 @@
 package receiver
 
 import (
-	"log"
-	"os"
-
+	"github.com/button-tech/rate-alerts/rabbitmq"
+	"github.com/button-tech/rate-alerts/storage"
 	"github.com/pkg/errors"
-	"github.com/streadway/amqp"
+	"log"
 )
 
 type Receiver struct {
-	conn    *amqp.Connection
-	channel *amqp.Channel
-	queue   amqp.Queue
+	store    *storage.Cache
+	rabbitMQ *rabbitmq.Instance
 }
 
 func New() (*Receiver, error) {
-	conn, err := amqp.Dial(os.Getenv("RABBIT_MQ_CONN_URL"))
+	rabbitMQ, err := rabbitmq.NewInstance()
 	if err != nil {
-		return nil, errors.Wrap(err, "rabbitMQ connection")
-	}
-
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, errors.Wrap(err, "rabbitMQ channel")
+		return nil, errors.Wrap(err, "rabbitMQ instance declaration")
 	}
 
 	r := Receiver{
-		conn:    conn,
-		channel: ch,
-	}
-	if err := r.queueSettings(); err != nil {
-		return nil, err
+		store:    storage.NewCache(),
+		rabbitMQ: rabbitMQ,
 	}
 
 	return &r, nil
 }
 
-func (r *Receiver) queueSettings() error {
-	q, err := r.channel.QueueDeclare(
-		"alert",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return errors.Wrap(err, "queue settings init")
-	}
-	r.Queue = q
-
-	return nil
-}
-
 func (r *Receiver) Finalize() error {
 	log.Println("rabbitMQ connection close...")
-	if err := r.conn.Close(); err != nil {
+	if err := r.rabbitMQ.Conn.Close(); err != nil {
 		return err
 	}
 
 	log.Println("rabbitMQ channel close...")
-	if err := r.channel.Close(); err != nil {
+	if err := r.rabbitMQ.Channel.Close(); err != nil {
 		return err
 	}
 

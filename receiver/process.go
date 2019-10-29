@@ -3,6 +3,7 @@ package receiver
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/imroc/req"
 	"github.com/pkg/errors"
@@ -14,9 +15,11 @@ type process struct {
 	Fiat     string `json:"fiat"`
 }
 
-func (r *Receiver) Process() (<-chan amqp.Delivery, error) {
-	msgs, err := r.channel.Consume(
-		r.queue.Name,
+var t = time.NewTicker(time.Second * 3)
+
+func (r *Receiver) ProcessChannel() (<-chan amqp.Delivery, error) {
+	msgs, err := r.rabbitMQ.Channel.Consume(
+		r.rabbitMQ.Queue.Name,
 		"",
 		true,
 		false,
@@ -42,7 +45,6 @@ func doRequest(p process) error {
 		return err
 	}
 
-
 }
 
 func hunting202(url string) error {
@@ -60,6 +62,7 @@ func hunting202(url string) error {
 	if err != nil {
 		return errors.Wrap(errors.New("no 202 statusCodes"), "hunting202")
 	}
+
 	return nil
 }
 
@@ -73,5 +76,6 @@ func checkURL(url string) error {
 	if resp.Response().StatusCode != 202 {
 		return errors.Wrap(errors.New("response statusCode not 202"), "checkURL")
 	}
+
 	return nil
 }
