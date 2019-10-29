@@ -1,6 +1,8 @@
 package receiver
 
 import (
+	"encoding/json"
+	"github.com/button-tech/rate-alerts/storage"
 	"log"
 	"os"
 	"time"
@@ -15,7 +17,7 @@ type process struct {
 	Fiat     string `json:"fiat"`
 }
 
-func (r *Receiver) ProcessChannel() (<-chan amqp.Delivery, error) {
+func (r *Receiver) deliveryChannel() (<-chan amqp.Delivery, error) {
 	msgs, err := r.rabbitMQ.Channel.Consume(
 		r.rabbitMQ.Queue.Name,
 		"",
@@ -30,6 +32,25 @@ func (r *Receiver) ProcessChannel() (<-chan amqp.Delivery, error) {
 	}
 
 	return msgs, nil
+}
+
+func (r *Receiver) Processing() error {
+	c, err := r.deliveryChannel()
+	if err != nil {
+		return err
+	}
+
+	for msg := range c {
+		var block storage.ConditionBlock
+		if err := json.Unmarshal(msg.Body, &block); err != nil {
+			log.Println(err)
+		}
+
+		r.store.Set(block.Currency, block.Fiat, block)
+	}
+	select {
+
+	}
 }
 
 func (r *Receiver) schedule(d amqp.Delivery) {

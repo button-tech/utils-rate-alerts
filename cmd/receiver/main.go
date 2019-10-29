@@ -15,11 +15,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	c, err := r.ProcessChannel()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	signalEx := make(chan os.Signal, 1)
 	defer close(signalEx)
 
@@ -30,12 +25,7 @@ func main() {
 		syscall.SIGQUIT)
 
 	log.Println("Start processing")
-	go func() {
-		for msg := range c {
-			log.Printf("Received a message: %s", msg.Body)
-
-		}
-	}()
+	go r.Processing()
 	defer r.Finalize()
 
 	stop := <-signalEx

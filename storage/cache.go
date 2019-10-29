@@ -1,55 +1,48 @@
 package storage
 
 import (
-	"github.com/pkg/errors"
 	"sync"
-
-	"github.com/google/uuid"
 )
+
+type Currency string
+type Fiat string
 
 type Cache struct {
 	sync.Mutex
-	mapIdentifier map[string]string
-	mapData       map[string]data
+	subscribers map[Currency]map[Fiat][]ConditionBlock
 }
 
-type data struct {
-	currency  string
-	price     string
-	fiat      string
-	condition string
+type ConditionBlock struct {
+	Currency  string `json:"currency"`
+	Price     string `json:"price"`
+	Fiat      string `json:"fiat"`
+	Condition string `json:"condition"`
+	URL       string `json:"url"`
 }
 
 func NewCache() *Cache {
 	return &Cache{
-		mapIdentifier: make(map[string]string),
-		mapData:       make(map[string]data),
+		subscribers: make(map[Currency]map[Fiat][]ConditionBlock),
 	}
 }
 
-func (c *Cache) Set(url string) error {
+func (c *Cache) Set(cur string, f string, b ConditionBlock) {
 	c.Lock()
-	u, err := uuidGen()
-	if err != nil {
-		return err
+	cValue, ok := c.subscribers[Currency(cur)]
+	if !ok {
+		c.subscribers[Currency(cur)] = map[Fiat][]ConditionBlock{}
 	}
-	c.mapIdentifier[u] = url
+
+	fValue, _ := cValue[Fiat(f)]
+	fValue = append(fValue, b)
 
 	c.Unlock()
-	return nil
 }
 
-func (c *Cache) Get() (m map[string]string) {
+func (c *Cache) Get() (m map[Currency]map[Fiat][]ConditionBlock) {
 	c.Lock()
-	m = c.mapIdentifier
+	m = c.subscribers
 	c.Unlock()
 	return
 }
 
-func uuidGen() (string, error) {
-	u, err := uuid.NewRandom()
-	if err != nil {
-		return "", errors.Wrap(err, "UUID generate")
-	}
-	return u.String(), nil
-}
