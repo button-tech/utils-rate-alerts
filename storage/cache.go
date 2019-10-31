@@ -26,16 +26,16 @@ func NewCache() *Cache {
 	}
 }
 
-func (c *Cache) Set(cur string, f string, b ConditionBlock) {
+func (c *Cache) Set(b ConditionBlock) {
 	c.Lock()
-	cValue, ok := c.subscribers[Currency(cur)]
+	_, ok := c.subscribers[Currency(b.Currency)]
 	if !ok {
-		c.subscribers[Currency(cur)] = map[Fiat][]ConditionBlock{}
+		c.subscribers[Currency(b.Currency)] = map[Fiat][]ConditionBlock{Fiat(b.Fiat):make([]ConditionBlock, 0)}
 	}
 
-	fValue, _ := cValue[Fiat(f)]
+	fValue, ok := c.subscribers[Currency(b.Currency)][Fiat(b.Fiat)]
 	fValue = append(fValue, b)
-
+	c.subscribers[Currency(b.Currency)][Fiat(b.Fiat)] = fValue
 	c.Unlock()
 }
 

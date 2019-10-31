@@ -18,6 +18,7 @@ func main() {
 	signalEx := make(chan os.Signal, 1)
 	defer close(signalEx)
 
+
 	signal.Notify(signalEx,
 		syscall.SIGHUP,
 		syscall.SIGINT,
@@ -26,6 +27,8 @@ func main() {
 
 	log.Println("Start processing")
 	go r.Processing()
+	go r.GetPrices()
+
 	defer r.Finalize()
 
 	stop := <-signalEx
