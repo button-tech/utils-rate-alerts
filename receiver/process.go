@@ -209,13 +209,14 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 		}
 	}
 
-	if len(requests) > 0 {
-		for _, block := range requests {
-			go r.checkStatusAccepted(block)
-		}
-		return nil
+	if len(requests) == 0 {
+		return errors.New("no block to process")
 	}
-	return errors.New("no block to process")
+
+	for _, block := range requests {
+		go r.checkStatusAccepted(block)
+	}
+	return nil
 }
 
 func parseFloat(f, s string) ([]float64, error) {
