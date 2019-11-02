@@ -60,11 +60,13 @@ func (r *Receiver) Processing() {
 	}
 }
 
+const cmc = "cmc"
+
 func (r *Receiver) GetPrices() {
 	t := time.NewTicker(time.Second * 30)
 	for ; ; <-t.C {
 		var blocks requestBlocks
-		blocks.API = "cmc"
+		blocks.API = cmc
 
 		for k := range r.checkMap(&blocks) {
 			blocks.Currencies = append(blocks.Currencies, k)
