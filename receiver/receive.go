@@ -1,16 +1,15 @@
 package receiver
 
 import (
+	"log"
+
 	"github.com/button-tech/rate-alerts/rabbitmq"
 	"github.com/button-tech/rate-alerts/storage"
-	"github.com/button-tech/rate-alerts/storage/prices"
 	"github.com/pkg/errors"
-	"log"
 )
 
 type Receiver struct {
 	store    *storage.Cache
-	pricesStore *prices.Cache
 	rabbitMQ *rabbitmq.Instance
 }
 
@@ -22,7 +21,6 @@ func New() (*Receiver, error) {
 
 	r := Receiver{
 		store:    storage.NewCache(),
-		pricesStore: prices.NewCache(),
 		rabbitMQ: rabbitMQ,
 	}
 

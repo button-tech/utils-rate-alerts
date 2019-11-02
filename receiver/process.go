@@ -2,20 +2,18 @@ package receiver
 
 import (
 	"encoding/json"
-	"strconv"
-	"strings"
-
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fastjson"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/button-tech/rate-alerts/storage"
-	"github.com/button-tech/rate-alerts/storage/prices"
-
 	"github.com/imroc/req"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
-	"github.com/valyala/fastjson"
 )
 
 type requestBlocks struct {
@@ -52,6 +50,7 @@ func (r *Receiver) Processing() {
 		var block storage.ConditionBlock
 		if err := json.Unmarshal(msg.Body, &block); err != nil {
 			log.Println(err)
+			continue
 		}
 		r.store.Set(block)
 	}
@@ -67,19 +66,7 @@ func (r *Receiver) GetPrices() {
 		var blocks requestBlocks
 		blocks.API = "cmc"
 
-		checkMap := make(map[string]struct{})
-		m := r.store.Get()
-		for currency, fiat := range m {
-			blocks.Tokens = append(blocks.Tokens, string(currency))
-			for f := range fiat {
-				if _, ok := checkMap[string(f)]; !ok {
-					checkMap = map[string]struct{}{}
-				}
-				checkMap[string(f)] = struct{}{}
-			}
-		}
-		
-		for k := range checkMap {
+		for k := range r.checkMap(blocks) {
 			blocks.Currencies = append(blocks.Currencies, k)
 		}
 
@@ -89,21 +76,43 @@ func (r *Receiver) GetPrices() {
 	}
 }
 
+func(r *Receiver) checkMap(blocks requestBlocks) map[string]struct{} {
+	stored := r.store.Get()
+
+	m := make(map[string]struct{})
+	for currency, fiat := range stored {
+		blocks.Tokens = append(blocks.Tokens, string(currency))
+		for f := range fiat {
+			if _, ok := m[string(f)]; !ok {
+				m = map[string]struct{}{}
+			}
+			m[string(f)] = struct{}{}
+		}
+	}
+	return m
+}
+
 func (r *Receiver) getAndStorePrices(b *requestBlocks) error {
 	gotPrices, err := doRequest(b)
 	if err != nil {
 		return err
 	}
-	r.schedule(gotPrices)
+
+	if err := r.schedule(gotPrices); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func doRequest(b *requestBlocks) ([]*prices.ParsedPrices, error) {
+func doRequest(b *requestBlocks) ([]*parsedPrices, error) {
 	rq := req.New()
 	resp, err := rq.Post(os.Getenv("PRICES"), req.BodyJSON(&b))
 	if err != nil {
 		return nil, err
+	}
+	if resp.Response().StatusCode != fasthttp.StatusOK {
+		return nil, errors.Wrap(errors.New("No http statusOK"), "responseStatusCode")
 	}
 	
 	ps, err := respFastJSON(resp.Bytes())
@@ -114,23 +123,84 @@ func doRequest(b *requestBlocks) ([]*prices.ParsedPrices, error) {
 	return ps, nil
 }
 
+type parsedPrices struct {
+	currency string
+	rates map[string]string
+}
+
+const (
+	currency = "currency"
+	rates = "rates"
+)
+
+func respFastJSON(b []byte) ([]*parsedPrices, error) {
+	var p fastjson.Parser
+	parsed, err := p.ParseBytes(b)
+	if err != nil {
+		return nil, errors.Wrap(err, "parseBytes")
+	}
+
+	var pp []*parsedPrices
+
+	o := parsed.GetObject()
+	data := o.Get("data")
+	array, err := data.Array()
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get array")
+	}
+	for _, v := range array {
+		obj, err := v.Object()
+		if err != nil {
+			return nil, errors.Wrap(err, "can't get object")
+		}
+
+		var p parsedPrices
+		m := make(map[string]string)
+		obj.Visit(func(key []byte, v *fastjson.Value) {
+			sKey := string(key)
+			if sKey == currency {
+				p.currency = trim(v.String())
+			}
+
+			if sKey == rates {
+				rates, _ := v.Array()
+				for _, rate := range rates {
+					rateObj, _ := rate.Object()
+					rateObj.Visit(func(key []byte, v *fastjson.Value) {
+						m[string(key)] = trim(v.String())
+					})
+				}
+				p.rates = m
+			}
+		})
+		pp = append(pp, &p)
+	}
+
+	return pp, nil
+}
+
+func trim(s string ) string {
+	trimmed := strings.TrimPrefix(s, "\"")
+	trimmed = strings.TrimSuffix(trimmed, "\"")
+	return trimmed
+}
+
 // todo: OPTIMIZATION
-func (r *Receiver) schedule(pp []*prices.ParsedPrices) {
+func (r *Receiver) schedule(pp []*parsedPrices) error {
 	m := r.store.Get()
 	var requests []string
 
 	for currency, fiat := range m {
 		for f, condition := range fiat {
 			for _, p := range pp {
-				if string(f) == p.Currency {
-					for token, price := range p.Rates {
+				if string(f) == p.currency {
+					for token, price := range p.rates {
 						if token == string(currency) {
 							for _, c := range condition {
 								currentPrice, err := strconv.ParseFloat(price, 64)
 								conditionPrice, err := strconv.ParseFloat(c.Price, 64)
 								if err != nil {
-									log.Println(err)
-									return
+									return errors.Wrap(err, "parseFloat")
 								}
 								if c.Condition == "==" && currentPrice == conditionPrice {
 									requests = append(requests, c.URL)
@@ -149,69 +219,13 @@ func (r *Receiver) schedule(pp []*prices.ParsedPrices) {
 
 	if len(requests) > 0 {
 		for _, url := range requests {
-			go hunting202(url)
+			go checkStatusAccepted(url)
 		}
 	}
+	return nil
 }
 
-type parsedPrices struct {
-	currency string
-	rates map[string]string
-}
-
-func respFastJSON(b []byte) ([]*prices.ParsedPrices, error) {
-	var p fastjson.Parser
-	parsed, err := p.ParseBytes(b)
-	if err != nil {
-		return nil, errors.Wrap(err, "parseBytes")
-	}
-
-	var pp []*prices.ParsedPrices
-
-	o := parsed.GetObject()
-	data := o.Get("data")
-	array, err := data.Array()
-	if err != nil {
-		return nil, errors.Wrap(err, "can't get array")
-	}
-	for _, v := range array {
-		obj, err := v.Object()
-		if err != nil {
-			return nil, errors.Wrap(err, "can't get object")
-		}
-
-		var p prices.ParsedPrices
-		m := make(map[string]string)
-		obj.Visit(func(key []byte, v *fastjson.Value) {
-			sKey := string(key)
-			if sKey == "currency" {
-				c := v.String()
-				c = strings.TrimPrefix(c, "\"")
-				c = strings.TrimSuffix(c, "\"")
-				p.Currency = c
-			}
-
-			if sKey == "rates" {
-				rates, _ := v.Array()
-				for _, r := range rates {
-					rO, _ := r.Object()
-					rO.Visit(func(key []byte, v *fastjson.Value) {
-						r := v.String()
-						r = strings.TrimPrefix(r, "\"")
-						r = strings.TrimSuffix(r, "\"")
-						m[string(key)] = r
-					})
-				}
-				p.Rates = m
-			}
-		})
-		pp = append(pp, &p)
-	}
-
-	return pp, nil
-}
-
-func hunting202(url string) {
+func checkStatusAccepted(url string) {
 	var err error
 	t := time.NewTicker(time.Second * 3)
 
@@ -221,7 +235,6 @@ func hunting202(url string) {
 		if err == nil {
 			break
 		}
-		log.Println(err)
 		counter++
 	}
 
