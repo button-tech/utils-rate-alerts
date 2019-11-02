@@ -65,17 +65,16 @@ func NewServer() (*Server, error) {
 	return &server, nil
 }
 
-func (s *Server) Finalize() error {
+func (s *Server) Finalize()  {
 	log.Println("rabbitMQ connection close...")
 	if err := s.rabbitMQ.Conn.Close(); err != nil {
-		return err
+		return
 	}
 
 	log.Println("rabbitMQ channel close...")
 	if err := s.ac.channel.Close(); err != nil {
-		return err
+		return
 	}
-	return nil
 }
 
 func (s *Server) initBaseRoute() {
