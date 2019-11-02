@@ -17,9 +17,9 @@ import (
 )
 
 type requestBlocks struct {
-	Tokens []string `json:"tokens"`
-	Currencies     []string `json:"currencies"`
-	API      string   `json:"api"`
+	Tokens     []string `json:"tokens"`
+	Currencies []string `json:"currencies"`
+	API        string   `json:"api"`
 }
 
 func (r *Receiver) deliveryChannel() (<-chan amqp.Delivery, error) {
@@ -55,9 +55,7 @@ func (r *Receiver) Processing() {
 		r.store.Set(block)
 	}
 
-	select {
-
-	}
+	select {}
 }
 
 const cmc = "cmc"
@@ -78,7 +76,7 @@ func (r *Receiver) GetPrices() {
 	}
 }
 
-func(r *Receiver) checkMap(blocks *requestBlocks) map[string]struct{} {
+func (r *Receiver) checkMap(blocks *requestBlocks) map[string]struct{} {
 	stored := r.store.Get()
 
 	m := make(map[string]struct{})
@@ -119,7 +117,7 @@ func doRequest(b *requestBlocks) ([]*parsedPrices, error) {
 
 	ps, err := respFastJSON(resp.Bytes())
 	if err != nil {
-	return nil, err
+		return nil, err
 	}
 
 	return ps, nil
@@ -127,12 +125,12 @@ func doRequest(b *requestBlocks) ([]*parsedPrices, error) {
 
 type parsedPrices struct {
 	currency string
-	rates map[string]string
+	rates    map[string]string
 }
 
 const (
 	currency = "currency"
-	rates = "rates"
+	rates    = "rates"
 )
 
 func respFastJSON(b []byte) ([]*parsedPrices, error) {
@@ -181,7 +179,7 @@ func respFastJSON(b []byte) ([]*parsedPrices, error) {
 	return pp, nil
 }
 
-func trim(s string ) string {
+func trim(s string) string {
 	trimmed := strings.TrimPrefix(s, "\"")
 	trimmed = strings.TrimSuffix(trimmed, "\"")
 	return trimmed
@@ -220,8 +218,6 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 	return errors.New("no block to process")
 }
 
-
-
 func parseFloat(f, s string) ([]float64, error) {
 	var floats []float64
 	first, err := strconv.ParseFloat(f, 64)
@@ -238,7 +234,7 @@ func parseFloat(f, s string) ([]float64, error) {
 	return floats, nil
 }
 
-func(r *Receiver) checkStatusAccepted(block storage.ConditionBlock) {
+func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) {
 	var err error
 	t := time.NewTicker(time.Second * 3)
 

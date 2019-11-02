@@ -9,7 +9,6 @@ type Token string
 type Fiat string
 type URL string
 
-
 type Cache struct {
 	sync.Mutex
 	subscribers map[Token]map[Fiat]map[URL]ConditionBlock
@@ -73,8 +72,7 @@ func (c *Cache) Delete(b ConditionBlock) error {
 	if !ok {
 		return errors.New("no key in map")
 	}
-	delete(c.subscribers[Token(b.Currency)][Fiat(b.Fiat)],  URL(b.URL))
+	delete(c.subscribers[Token(b.Currency)][Fiat(b.Fiat)], URL(b.URL))
 	c.Unlock()
 	return nil
 }
-

@@ -6,4 +6,3 @@ type pricesRequest struct {
 	Change     string   `json:"change"`
 	API        string   `json:"api"`
 }
-

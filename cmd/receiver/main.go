@@ -18,7 +18,6 @@ func main() {
 	signalEx := make(chan os.Signal, 1)
 	defer close(signalEx)
 
-
 	signal.Notify(signalEx,
 		syscall.SIGHUP,
 		syscall.SIGINT,
