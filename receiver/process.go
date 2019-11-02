@@ -2,7 +2,6 @@ package receiver
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
 	"log"
@@ -115,8 +114,7 @@ func doRequest(b *requestBlocks) ([]*parsedPrices, error) {
 	if resp.Response().StatusCode != fasthttp.StatusOK {
 		return nil, errors.Wrap(errors.New("No http statusOK"), "responseStatusCode")
 	}
-	a:= resp.String()
-	fmt.Println(a)
+
 	ps, err := respFastJSON(resp.Bytes())
 	if err != nil {
 	return nil, err
