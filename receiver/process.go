@@ -2,6 +2,7 @@ package receiver
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
 	"log"
@@ -114,7 +115,8 @@ func doRequest(b *requestBlocks) ([]*parsedPrices, error) {
 	if resp.Response().StatusCode != fasthttp.StatusOK {
 		return nil, errors.Wrap(errors.New("No http statusOK"), "responseStatusCode")
 	}
-	
+	a:= resp.String()
+	fmt.Println(a)
 	ps, err := respFastJSON(resp.Bytes())
 	if err != nil {
 	return nil, err
@@ -187,52 +189,94 @@ func trim(s string ) string {
 
 // todo: OPTIMIZATION
 func (r *Receiver) schedule(pp []*parsedPrices) error {
-	m := r.store.Get()
-	var requests []string
+	stored := r.store.Get()
+	var requests []storage.ConditionBlock
 
-	for currency, fiat := range m {
-		for f, condition := range fiat {
-			for _, p := range pp {
-				if string(f) == p.currency {
-					for token, price := range p.rates {
-						if token == string(currency) {
-							for _, c := range condition {
-								currentPrice, err := strconv.ParseFloat(price, 64)
-								conditionPrice, err := strconv.ParseFloat(c.Price, 64)
-								if err != nil {
-									return errors.Wrap(err, "parseFloat")
-								}
-								if c.Condition == "==" && currentPrice == conditionPrice {
-									requests = append(requests, c.URL)
-								} else if c.Condition == ">=" && currentPrice >= conditionPrice {
-									requests = append(requests, c.URL)
-								} else if c.Condition == "<=" && currentPrice <= conditionPrice {
-									requests = append(requests, c.URL)
-								}
-							}
-						}
-					}
+	for _, p := range pp {
+		for token, price := range p.rates {
+			urlMap := stored[storage.Token(token)][storage.Fiat(p.currency)]
+			for _, block := range urlMap {
+				parsedFloats, err := parseFloat(price, block.Price)
+				if err != nil {
+					return err
+				}
+
+				currentPrice := parsedFloats[0]
+				conditionPrice := parsedFloats[1]
+				if block.Condition == "==" && currentPrice == conditionPrice ||
+					block.Condition == ">=" && currentPrice >= conditionPrice ||
+					block.Condition == "<=" && currentPrice <= conditionPrice {
+					requests = append(requests, block)
 				}
 			}
 		}
 	}
 
+
+
+
+	//for currency, fiat := range m {
+	//	for f, condition := range fiat {
+	//		for _, p := range pp {
+	//			if string(f) == p.currency {
+	//				for token, price := range p.rates {
+	//					if token == string(currency) {
+	//						for _, c := range condition {
+	//							currentPrice, err := strconv.ParseFloat(price, 64)
+	//							conditionPrice, err := strconv.ParseFloat(c.Price, 64)
+	//							if err != nil {
+	//								return errors.Wrap(err, "parseFloat")
+	//							}
+	//							if c.Condition == "==" && currentPrice == conditionPrice {
+	//								requests = append(requests, c.URL)
+	//							} else if c.Condition == ">=" && currentPrice >= conditionPrice {
+	//								requests = append(requests, c.URL)
+	//							} else if c.Condition == "<=" && currentPrice <= conditionPrice {
+	//								requests = append(requests, c.URL)
+	//							}
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+
 	if len(requests) > 0 {
-		for _, url := range requests {
-			go checkStatusAccepted(url)
+		for _, block := range requests {
+			go r.checkStatusAccepted(block)
 		}
 	}
 	return nil
 }
 
-func checkStatusAccepted(url string) {
+func parseFloat(f, s string) ([]float64, error) {
+	var floats []float64
+	first, err := strconv.ParseFloat(f, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	second, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	floats = append(floats, first, second)
+	return floats, nil
+}
+
+func(r *Receiver) checkStatusAccepted(block storage.ConditionBlock) {
 	var err error
 	t := time.NewTicker(time.Second * 3)
 
 	counter := 0
 	for ; counter != 3; <-t.C {
-		err = checkURL(url)
+		err = checkURL(block.URL)
 		if err == nil {
+			if err := r.store.Delete(block); err != nil {
+				log.Println(err)
+			}
 			break
 		}
 		counter++
