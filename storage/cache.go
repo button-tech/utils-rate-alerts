@@ -6,10 +6,12 @@ import (
 
 type Currency string
 type Fiat string
+type URL string
+
 
 type Cache struct {
 	sync.Mutex
-	subscribers map[Currency]map[Fiat][]ConditionBlock
+	subscribers map[Currency]map[Fiat]map[URL]ConditionBlock
 }
 
 type ConditionBlock struct {
@@ -22,24 +24,42 @@ type ConditionBlock struct {
 
 func NewCache() *Cache {
 	return &Cache{
-		subscribers: make(map[Currency]map[Fiat][]ConditionBlock),
+		subscribers: make(map[Currency]map[Fiat]map[URL]ConditionBlock),
 	}
 }
 
 func (c *Cache) Set(b ConditionBlock) {
 	c.Lock()
-	_, ok := c.subscribers[Currency(b.Currency)]
-	if !ok {
-		c.subscribers[Currency(b.Currency)] = map[Fiat][]ConditionBlock{Fiat(b.Fiat):make([]ConditionBlock, 0)}
+	var ok bool
+
+	if ok = c.setCurrency(b); !ok {
+		c.subscribers[Currency(b.Currency)] = make(map[Fiat]map[URL]ConditionBlock)
 	}
 
-	fValue, ok := c.subscribers[Currency(b.Currency)][Fiat(b.Fiat)]
-	fValue = append(fValue, b)
-	c.subscribers[Currency(b.Currency)][Fiat(b.Fiat)] = fValue
+	if ok = c.setFiat(b); !ok {
+		c.subscribers[Currency(b.Currency)][Fiat(b.Fiat)] = make(map[URL]ConditionBlock)
+	}
+
+	c.setURL(b)
+
 	c.Unlock()
 }
 
-func (c *Cache) Get() (m map[Currency]map[Fiat][]ConditionBlock) {
+func (c *Cache) setCurrency(b ConditionBlock) bool {
+	_, ok := c.subscribers[Currency(b.Currency)]
+	return ok
+}
+
+func (c *Cache) setFiat(b ConditionBlock) bool {
+	_, ok := c.subscribers[Currency(b.Currency)][Fiat(b.Fiat)]
+	return ok
+}
+
+func (c *Cache) setURL(b ConditionBlock) {
+	c.subscribers[Currency(b.Currency)][Fiat(b.Fiat)][URL(b.URL)] = b
+}
+
+func (c *Cache) Get() (m map[Currency]map[Fiat]map[URL]ConditionBlock) {
 	c.Lock()
 	m = c.subscribers
 	c.Unlock()
