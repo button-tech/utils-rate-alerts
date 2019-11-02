@@ -62,22 +62,22 @@ func (r *Receiver) Processing() {
 }
 
 func (r *Receiver) GetPrices() {
-	t := time.NewTicker(time.Second * 15)
+	t := time.NewTicker(time.Second * 30)
 	for ; ; <-t.C {
 		var blocks requestBlocks
 		blocks.API = "cmc"
 
-		for k := range r.checkMap(blocks) {
+		for k := range r.checkMap(&blocks) {
 			blocks.Currencies = append(blocks.Currencies, k)
 		}
 
-		if err := r.getAndStorePrices(&blocks); err != nil {
+		if err := r.getPrices(&blocks); err != nil {
 			log.Println(err)
 		}
 	}
 }
 
-func(r *Receiver) checkMap(blocks requestBlocks) map[string]struct{} {
+func(r *Receiver) checkMap(blocks *requestBlocks) map[string]struct{} {
 	stored := r.store.Get()
 
 	m := make(map[string]struct{})
@@ -93,7 +93,7 @@ func(r *Receiver) checkMap(blocks requestBlocks) map[string]struct{} {
 	return m
 }
 
-func (r *Receiver) getAndStorePrices(b *requestBlocks) error {
+func (r *Receiver) getPrices(b *requestBlocks) error {
 	gotPrices, err := doRequest(b)
 	if err != nil {
 		return err
@@ -212,36 +212,6 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 		}
 	}
 
-
-
-
-	//for currency, fiat := range m {
-	//	for f, condition := range fiat {
-	//		for _, p := range pp {
-	//			if string(f) == p.currency {
-	//				for token, price := range p.rates {
-	//					if token == string(currency) {
-	//						for _, c := range condition {
-	//							currentPrice, err := strconv.ParseFloat(price, 64)
-	//							conditionPrice, err := strconv.ParseFloat(c.Price, 64)
-	//							if err != nil {
-	//								return errors.Wrap(err, "parseFloat")
-	//							}
-	//							if c.Condition == "==" && currentPrice == conditionPrice {
-	//								requests = append(requests, c.URL)
-	//							} else if c.Condition == ">=" && currentPrice >= conditionPrice {
-	//								requests = append(requests, c.URL)
-	//							} else if c.Condition == "<=" && currentPrice <= conditionPrice {
-	//								requests = append(requests, c.URL)
-	//							}
-	//						}
-	//					}
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-
 	if len(requests) > 0 {
 		for _, block := range requests {
 			go r.checkStatusAccepted(block)
@@ -289,14 +259,15 @@ func(r *Receiver) checkStatusAccepted(block storage.ConditionBlock) {
 
 func checkURL(url string) error {
 	rq := req.New()
-	resp, err := rq.Get(url)
+	_, err := rq.Get(url)
 	if err != nil {
 		return errors.Wrap(err, "checkURL")
 	}
 
-	if resp.Response().StatusCode != 202 {
-		return errors.Wrap(errors.New("response statusCode not 202"), "checkURL")
-	}
+	// Comment for test
+	//if resp.Response().StatusCode != 202 {
+	//	return errors.Wrap(errors.New("response statusCode not 202"), "checkURL")
+	//}
 
 	return nil
 }

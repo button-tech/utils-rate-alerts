@@ -74,6 +74,7 @@ func (c *Cache) Delete(b ConditionBlock) error {
 		return errors.New("no key in map")
 	}
 	delete(c.subscribers[Token(b.Currency)][Fiat(b.Fiat)],  URL(b.URL))
+	c.Unlock()
 	return nil
 }
 
