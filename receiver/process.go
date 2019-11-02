@@ -185,7 +185,6 @@ func trim(s string ) string {
 	return trimmed
 }
 
-// todo: OPTIMIZATION
 func (r *Receiver) schedule(pp []*parsedPrices) error {
 	stored := r.store.Get()
 	var requests []storage.ConditionBlock
@@ -239,11 +238,12 @@ func(r *Receiver) checkStatusAccepted(block storage.ConditionBlock) {
 	t := time.NewTicker(time.Second * 3)
 
 	counter := 0
-	for ; counter != 3; <-t.C {
+	for ; counter < 4; <-t.C {
 		err = checkURL(block.URL)
 		if err == nil {
 			if err := r.store.Delete(block); err != nil {
 				log.Println(err)
+				continue
 			}
 			break
 		}
