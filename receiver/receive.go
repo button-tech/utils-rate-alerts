@@ -19,12 +19,10 @@ func New() (*Receiver, error) {
 		return nil, errors.Wrap(err, "rabbitMQ instance declaration")
 	}
 
-	r := Receiver{
+	return &Receiver{
 		store:    storage.NewCache(),
 		rabbitMQ: rabbitMQ,
-	}
-
-	return &r, nil
+	}, nil
 }
 
 func (r *Receiver) Finalize() {
