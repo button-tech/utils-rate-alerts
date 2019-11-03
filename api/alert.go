@@ -42,5 +42,5 @@ func (ac *apiContoller) alert(ctx *routing.Context) error {
 }
 
 func (s *Server) initAlertAPI() {
-	s.G.Get("/alert", s.ac.alert)
+	s.G.Post("/alert", s.ac.alert)
 }
