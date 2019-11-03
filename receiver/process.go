@@ -61,7 +61,7 @@ func (r *Receiver) Processing() {
 const cmc = "cmc"
 
 func (r *Receiver) GetPrices() {
-	t := time.NewTicker(time.Second * 30)
+	t := time.NewTicker(time.Minute * 8)
 	for ; ; <-t.C {
 		var blocks requestBlocks
 		blocks.API = cmc
@@ -214,6 +214,7 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 	}
 
 	for _, block := range requests {
+		block := block
 		go r.checkStatusAccepted(block)
 	}
 	return nil
