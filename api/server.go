@@ -65,7 +65,7 @@ func NewServer() (*Server, error) {
 	return &server, nil
 }
 
-func (s *Server) Finalize()  {
+func (s *Server) Finalize() {
 	log.Println("rabbitMQ connection close...")
 	if err := s.rabbitMQ.Conn.Close(); err != nil {
 		return

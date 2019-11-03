@@ -13,4 +13,5 @@ require (
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/valyala/fasthttp v1.5.0
 	github.com/valyala/fastjson v1.4.1
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 )

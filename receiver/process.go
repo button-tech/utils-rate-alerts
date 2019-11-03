@@ -14,6 +14,7 @@ import (
 	"github.com/imroc/req"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
+	"golang.org/x/sync/errgroup"
 )
 
 type requestBlocks struct {
@@ -61,7 +62,7 @@ func (r *Receiver) Processing() {
 const cmc = "cmc"
 
 func (r *Receiver) GetPrices() {
-	t := time.NewTicker(time.Minute * 8)
+	t := time.NewTicker(time.Minute * 4)
 	for ; ; <-t.C {
 		var blocks requestBlocks
 		blocks.API = cmc
@@ -187,8 +188,8 @@ func trim(s string) string {
 
 func (r *Receiver) schedule(pp []*parsedPrices) error {
 	stored := r.store.Get()
-	var requests []storage.ConditionBlock
 
+	var requests []storage.ConditionBlock
 	for _, p := range pp {
 		for token, price := range p.rates {
 			urlMap := stored[storage.Token(token)][storage.Fiat(p.currency)]
@@ -213,9 +214,16 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 		return errors.New("no block to process")
 	}
 
+	var g errgroup.Group
 	for _, block := range requests {
 		block := block
-		go r.checkStatusAccepted(block)
+		g.Go(func() error {
+			return r.checkStatusAccepted(block)
+		})
+	}
+	err := g.Wait()
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -236,39 +244,36 @@ func parseFloat(f, s string) ([]float64, error) {
 	return floats, nil
 }
 
-func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) {
+func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
 	var err error
 	t := time.NewTicker(time.Second * 3)
 
 	counter := 0
 	for ; counter < 4; <-t.C {
 		err = checkURL(block.URL)
-		if err == nil {
-			if err := r.store.Delete(block); err != nil {
-				log.Println(err)
-				continue
-			}
-			break
+		if err != nil {
+			counter++
+			continue
 		}
-		counter++
+		if err := r.store.Delete(block); err != nil {
+			return err
+		}
+		return nil
 	}
 
-	if err != nil {
-		log.Println(err)
-	}
+	return err
 }
 
 func checkURL(url string) error {
 	rq := req.New()
-	_, err := rq.Get(url)
+	resp, err := rq.Get(url)
 	if err != nil {
 		return errors.Wrap(err, "checkURL")
 	}
 
-	// Comment for test
-	//if resp.Response().StatusCode != 202 {
-	//	return errors.Wrap(errors.New("response statusCode not 202"), "checkURL")
-	//}
+	if resp.Response().StatusCode != 202 {
+		return errors.Wrap(errors.New("response statusCode not 202"), "checkURL")
+	}
 
 	return nil
 }
