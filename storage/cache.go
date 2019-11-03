@@ -68,11 +68,13 @@ func (c *Cache) Get() (m map[Token]map[Fiat]map[URL]ConditionBlock) {
 
 func (c *Cache) Delete(b ConditionBlock) error {
 	c.Lock()
+	defer c.Unlock()
+
 	_, ok := c.subscribers[Token(b.Currency)][Fiat(b.Fiat)][URL(b.URL)]
 	if !ok {
 		return errors.New("no key in map")
 	}
 	delete(c.subscribers[Token(b.Currency)][Fiat(b.Fiat)], URL(b.URL))
-	c.Unlock()
+
 	return nil
 }
