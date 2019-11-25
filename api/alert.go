@@ -15,7 +15,7 @@ type alert struct {
 	URL       string `json:"url"`
 }
 
-func (ac *apiContoller) alert(ctx *routing.Context) error {
+func (ac *adiController) alert(ctx *routing.Context) error {
 	var (
 		body alert
 		err  error
@@ -41,6 +41,12 @@ func (ac *apiContoller) alert(ctx *routing.Context) error {
 	return nil
 }
 
+func (ac *adiController) healthCheck(ctx *routing.Context) error {
+	respondWithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "alive"})
+	return nil
+}
+
 func (s *Server) initAlertAPI() {
 	s.G.Post("/alert", s.ac.alert)
+	s.G.Get("/health-check", s.ac.healthCheck)
 }

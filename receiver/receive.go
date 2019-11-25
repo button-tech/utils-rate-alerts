@@ -29,12 +29,10 @@ func (r *Receiver) Finalize() {
 	log.Println("rabbitMQ connection close...")
 	if err := r.rabbitMQ.Conn.Close(); err != nil {
 		log.Println(err)
-		return
 	}
 
 	log.Println("rabbitMQ channel close...")
 	if err := r.rabbitMQ.Channel.Close(); err != nil {
 		log.Println(err)
-		return
 	}
 }
