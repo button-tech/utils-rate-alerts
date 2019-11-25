@@ -17,10 +17,23 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const trueConditionResult = "true"
+
 type requestBlocks struct {
 	Tokens     []string `json:"tokens"`
 	Currencies []string `json:"currencies"`
 	API        string   `json:"api"`
+}
+
+type trueCondition struct {
+	Result string `json:"result"`
+	Values struct {
+		Currency  string `json:"currency"`
+		Condition string `json:"condition"`
+		Fiat      string `json:"fiat"`
+		Price     string `json:"price"`
+	}
+	url string
 }
 
 func (r *Receiver) deliveryChannel() (<-chan amqp.Delivery, error) {
@@ -252,11 +265,11 @@ func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
 
 	counter := 0
 	for ; counter < 4; <-t.C {
-		err = checkURL(block.URL)
-		if err != nil {
+		if err = checkURL(executedCondition(block)); err != nil {
 			counter++
 			continue
 		}
+
 		if err := r.store.Delete(block); err != nil {
 			return err
 		}
@@ -266,9 +279,9 @@ func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
 	return err
 }
 
-func checkURL(url string) error {
+func checkURL(payload *trueCondition) error {
 	rq := req.New()
-	resp, err := rq.Get(url)
+	resp, err := rq.Post(payload.url, req.BodyJSON(&payload))
 	if err != nil {
 		return errors.Wrap(err, "checkURL")
 	}
@@ -278,4 +291,22 @@ func checkURL(url string) error {
 	}
 
 	return nil
+}
+
+func executedCondition(block storage.ConditionBlock) *trueCondition {
+	return &trueCondition{
+		Result: trueConditionResult,
+		Values: struct {
+			Currency  string `json:"currency"`
+			Condition string `json:"condition"`
+			Fiat      string `json:"fiat"`
+			Price     string `json:"price"`
+		}{
+			Currency:  block.Currency,
+			Condition: block.Condition,
+			Fiat:      block.Fiat,
+			Price:     block.Price,
+		},
+		url: block.URL,
+	}
 }
