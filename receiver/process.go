@@ -202,6 +202,8 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 				currentPrice := parsedFloats[0]
 				conditionPrice := parsedFloats[1]
 				if block.Condition == "==" && currentPrice == conditionPrice ||
+					block.Condition == ">" && currentPrice > conditionPrice ||
+					block.Condition == "<" && currentPrice < conditionPrice ||
 					block.Condition == ">=" && currentPrice >= conditionPrice ||
 					block.Condition == "<=" && currentPrice <= conditionPrice {
 					requests = append(requests, block)
