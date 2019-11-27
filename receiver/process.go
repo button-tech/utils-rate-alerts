@@ -32,7 +32,7 @@ type trueCondition struct {
 		Condition string `json:"condition"`
 		Fiat      string `json:"fiat"`
 		Price     string `json:"price"`
-	}
+	} `json:"values"`
 	url string
 }
 
