@@ -15,11 +15,12 @@ type Cache struct {
 }
 
 type ConditionBlock struct {
-	Currency  string `json:"currency"`
-	Price     string `json:"price"`
-	Fiat      string `json:"fiat"`
-	Condition string `json:"condition"`
-	URL       string `json:"url"`
+	Currency     string `json:"currency"`
+	CurrentPrice string `json:"currentPrice"`
+	Price        string `json:"price"`
+	Fiat         string `json:"fiat"`
+	Condition    string `json:"condition"`
+	URL          string `json:"url"`
 }
 
 func NewCache() *Cache {

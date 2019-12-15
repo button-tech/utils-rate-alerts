@@ -28,12 +28,13 @@ type requestBlocks struct {
 type trueCondition struct {
 	Result string `json:"result"`
 	Values struct {
-		Currency  string `json:"currency"`
-		Condition string `json:"condition"`
-		Fiat      string `json:"fiat"`
-		Price     string `json:"price"`
+		Currency     string `json:"currency"`
+		Condition    string `json:"condition"`
+		Fiat         string `json:"fiat"`
+		Price        string `json:"price"`
+		CurrentPrice string `json:"currentPrice"`
 	} `json:"values"`
-	url string
+	URL string `json:"url"`
 }
 
 func (r *Receiver) deliveryChannel() (<-chan amqp.Delivery, error) {
@@ -68,17 +69,16 @@ func (r *Receiver) Processing() {
 		}
 		r.store.Set(block)
 	}
-
 	select {}
 }
 
-const cmc = "cmc"
+const crc = "crc"
 
 func (r *Receiver) GetPrices() {
-	t := time.NewTicker(time.Minute * 4)
+	t := time.NewTicker(time.Minute * 1)
 	for ; ; <-t.C {
 		var blocks requestBlocks
-		blocks.API = cmc
+		blocks.API = crc
 
 		for k := range r.checkMap(&blocks) {
 			blocks.Currencies = append(blocks.Currencies, k)
@@ -201,6 +201,9 @@ func trim(s string) string {
 
 func (r *Receiver) schedule(pp []*parsedPrices) error {
 	stored := r.store.Get()
+	if stored == nil {
+		return errors.New("store is nil")
+	}
 
 	var requests []storage.ConditionBlock
 	for _, p := range pp {
@@ -219,6 +222,7 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 					block.Condition == "<" && currentPrice < conditionPrice ||
 					block.Condition == ">=" && currentPrice >= conditionPrice ||
 					block.Condition == "<=" && currentPrice <= conditionPrice {
+					block.CurrentPrice = price
 					requests = append(requests, block)
 				}
 			}
@@ -265,9 +269,16 @@ func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
 
 	counter := 0
 	for ; counter < 4; <-t.C {
-		if err = checkURL(executedCondition(block)); err != nil {
-			counter++
-			continue
+		if strings.HasPrefix("http", block.URL) {
+			if err = checkURL(executedCondition(block), block.URL); err != nil {
+				counter++
+				continue
+			}
+		} else {
+			if err = checkURL(executedCondition(block), r.botAlertURL); err != nil {
+				counter++
+				continue
+			}
 		}
 
 		if err := r.store.Delete(block); err != nil {
@@ -279,9 +290,9 @@ func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
 	return err
 }
 
-func checkURL(payload *trueCondition) error {
+func checkURL(payload *trueCondition, url string) error {
 	rq := req.New()
-	resp, err := rq.Post(payload.url, req.BodyJSON(&payload))
+	resp, err := rq.Post(url, req.BodyJSON(&payload))
 	if err != nil {
 		return errors.Wrap(err, "checkURL")
 	}
@@ -297,16 +308,18 @@ func executedCondition(block storage.ConditionBlock) *trueCondition {
 	return &trueCondition{
 		Result: trueConditionResult,
 		Values: struct {
-			Currency  string `json:"currency"`
-			Condition string `json:"condition"`
-			Fiat      string `json:"fiat"`
-			Price     string `json:"price"`
+			Currency     string `json:"currency"`
+			Condition    string `json:"condition"`
+			Fiat         string `json:"fiat"`
+			Price        string `json:"price"`
+			CurrentPrice string `json:"currentPrice"`
 		}{
-			Currency:  block.Currency,
-			Condition: block.Condition,
-			Fiat:      block.Fiat,
-			Price:     block.Price,
+			Currency:     block.Currency,
+			Condition:    block.Condition,
+			Fiat:         block.Fiat,
+			Price:        block.Price,
+			CurrentPrice: block.CurrentPrice,
 		},
-		url: block.URL,
+		URL: block.URL,
 	}
 }

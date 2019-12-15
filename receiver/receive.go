@@ -2,6 +2,7 @@ package receiver
 
 import (
 	"log"
+	"os"
 
 	"github.com/button-tech/rate-alerts/rabbitmq"
 	"github.com/button-tech/rate-alerts/storage"
@@ -9,8 +10,9 @@ import (
 )
 
 type Receiver struct {
-	store    *storage.Cache
-	rabbitMQ *rabbitmq.Instance
+	botAlertURL string
+	store       *storage.Cache
+	rabbitMQ    *rabbitmq.Instance
 }
 
 func New() (*Receiver, error) {
@@ -20,8 +22,9 @@ func New() (*Receiver, error) {
 	}
 
 	return &Receiver{
-		store:    storage.NewCache(),
-		rabbitMQ: rabbitMQ,
+		store:       storage.NewCache(),
+		rabbitMQ:    rabbitMQ,
+		botAlertURL: os.Getenv("ALERT_BOT_URL"),
 	}, nil
 }
 
