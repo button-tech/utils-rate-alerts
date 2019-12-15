@@ -42,14 +42,6 @@ type botMessage struct {
 	userText  string
 }
 
-type arguments struct {
-	price     string
-	condition string
-	fiat      string
-	currency  string
-	chatID    int64
-}
-
 func CreateBot(p BotProvider) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPI(p.BotToken)
 	if err != nil {
