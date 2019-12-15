@@ -9,20 +9,25 @@ import (
 	"github.com/valyala/fasthttp"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 type Server struct {
 	Core     *fasthttp.Server
+	Bot      *Bot
 	R        *routing.Router
 	G        *routing.RouteGroup
-	ac       *adiController
+	ac       *apiController
 	rabbitMQ *rabbitmq.Instance
+
+	PricesURL string
 }
 
 func NewServer() (*Server, error) {
 	server := Server{
-		R: routing.New(),
+		R:         routing.New(),
+		PricesURL: os.Getenv("PRICES"),
 	}
 	server.R.Use(cors)
 	server.fs()
@@ -32,6 +37,14 @@ func NewServer() (*Server, error) {
 		return nil, errors.Wrap(err, "rabbitMQ instance declaration")
 	}
 	server.rabbitMQ = r
+
+	bp := SetupBot(r.Channel, r.Queue, os.Getenv("BOT_TOKEN"))
+	b, err := CreateBot(bp)
+	if err != nil {
+		return nil, err
+	}
+	go b.Processing()
+	server.Bot = b
 
 	server.initBaseRoute()
 	server.initAlertAPI()
@@ -92,9 +105,10 @@ func (s *Server) fs() {
 
 func (s *Server) initBaseRoute() {
 	s.G = s.R.Group("/api/v1")
-	s.ac = &adiController{
+	s.ac = &apiController{
 		channel: s.rabbitMQ.Channel,
 		queue:   s.rabbitMQ.Queue,
+		b:       s.Bot,
 	}
 }
 
@@ -106,7 +120,8 @@ func respondWithJSON(ctx *routing.Context, code int, payload map[string]interfac
 	}
 }
 
-type adiController struct {
+type apiController struct {
 	channel *amqp.Channel
 	queue   amqp.Queue
+	b       *Bot
 }
