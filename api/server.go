@@ -2,15 +2,16 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/button-tech/rate-alerts/pkg/rabbitmq"
-	"github.com/pkg/errors"
-	routing "github.com/qiangxue/fasthttp-routing"
-	"github.com/streadway/amqp"
-	"github.com/valyala/fasthttp"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/jeyldii/rate-alerts/pkg/rabbitmq"
+	"github.com/pkg/errors"
+	routing "github.com/qiangxue/fasthttp-routing"
+	"github.com/streadway/amqp"
+	"github.com/valyala/fasthttp"
 )
 
 type Server struct {

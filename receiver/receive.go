@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/button-tech/rate-alerts/pkg/rabbitmq"
-	"github.com/button-tech/rate-alerts/pkg/storage/cache"
+	"github.com/jeyldii/rate-alerts/pkg/rabbitmq"
+	"github.com/jeyldii/rate-alerts/pkg/storage/cache"
 	"github.com/pkg/errors"
 )
 

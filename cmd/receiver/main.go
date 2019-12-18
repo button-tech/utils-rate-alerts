@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/button-tech/rate-alerts/receiver"
+	"github.com/jeyldii/rate-alerts/receiver"
 )
 
 func main() {

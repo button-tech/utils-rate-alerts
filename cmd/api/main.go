@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/button-tech/rate-alerts/api"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/jeyldii/rate-alerts/api"
 )
 
 const port = ":5001"

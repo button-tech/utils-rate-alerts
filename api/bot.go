@@ -3,12 +3,13 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/button-tech/rate-alerts/pkg/storage/redis"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/streadway/amqp"
 	"strconv"
 	"strings"
 	"sync"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/jeyldii/rate-alerts/pkg/storage/redis"
+	"github.com/streadway/amqp"
 )
 
 const (
