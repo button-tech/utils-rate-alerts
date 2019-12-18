@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/button-tech/rate-alerts/rabbitmq"
+	"github.com/button-tech/rate-alerts/pkg/rabbitmq"
 	"github.com/pkg/errors"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"

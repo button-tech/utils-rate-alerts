@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/go-ozzo/ozzo-routing v2.1.4+incompatible // indirect
+	github.com/go-redis/redis/v7 v7.0.0-beta.4
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/golang/gddo v0.0.0-20190904175337-72a348e765d2 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect

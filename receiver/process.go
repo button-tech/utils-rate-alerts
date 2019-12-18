@@ -2,18 +2,18 @@ package receiver
 
 import (
 	"encoding/json"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fastjson"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/button-tech/rate-alerts/storage"
+	"github.com/button-tech/rate-alerts/pkg/storage/cache"
 	"github.com/imroc/req"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fastjson"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -62,7 +62,7 @@ func (r *Receiver) Processing() {
 	}
 
 	for msg := range c {
-		var block storage.ConditionBlock
+		var block cache.ConditionBlock
 		if err := json.Unmarshal(msg.Body, &block); err != nil {
 			log.Println(err)
 			continue
@@ -205,10 +205,10 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 		return errors.New("store is nil")
 	}
 
-	var requests []storage.ConditionBlock
+	var requests []cache.ConditionBlock
 	for _, p := range pp {
 		for token, price := range p.rates {
-			urlMap := stored[storage.Token(token)][storage.Fiat(p.currency)]
+			urlMap := stored[cache.Token(token)][cache.Fiat(p.currency)]
 			for _, block := range urlMap {
 				parsedFloats, err := parseFloat(price, block.Price)
 				if err != nil {
@@ -263,7 +263,7 @@ func parseFloat(f, s string) ([]float64, error) {
 	return floats, nil
 }
 
-func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
+func (r *Receiver) checkStatusAccepted(block cache.ConditionBlock) error {
 	var err error
 	t := time.NewTicker(time.Second * 3)
 
@@ -304,7 +304,7 @@ func checkURL(payload *trueCondition, url string) error {
 	return nil
 }
 
-func executedCondition(block storage.ConditionBlock) *trueCondition {
+func executedCondition(block cache.ConditionBlock) *trueCondition {
 	return &trueCondition{
 		Result: trueConditionResult,
 		Values: struct {
