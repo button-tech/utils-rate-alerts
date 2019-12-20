@@ -27,18 +27,16 @@ const (
 	secondPage = `Выберите фиатную валюту:
 Пример: USD
 `
-	thirdPage = `Введите сумму в %s:
-Пример: 7000
-`
+	thirdPage  = "Введите сумму в %s:\nПример: 7000"
 	fourthPage = `Введите условие:
 Пример: <= или >= или == или < или >
 `
 )
 
 const (
-	errCryptoInput = `❌ Попробуйте другую крипту\n%s`
-	errFiatInput   = `❌ Попробуйте другой фиат\n%s`
-	errPriceInput  = `❌ Введите валидную сумму`
+	errCryptoInput = "❌ Попробуйте другую крипту\n%s"
+	errFiatInput   = "❌ Попробуйте другой фиат\n%s"
+	errPriceInput  = "❌ Введите валидную сумму"
 )
 
 var fiats = map[string]struct{}{"AED": struct{}{}, "ALL": struct{}{}, "AMD": struct{}{}, "AOA": struct{}{}, "ARS": struct{}{}, "AUD": struct{}{}, "BAM": struct{}{}, "BDT": struct{}{}, "BGN": struct{}{}, "BHD": struct{}{}, "BIF": struct{}{}, "BND": struct{}{}, "BOB": struct{}{}, "BRL": struct{}{}, "BSD": struct{}{}, "BTC": struct{}{}, "BTN": struct{}{}, "BWP": struct{}{}, "BYN": struct{}{}, "CAD": struct{}{}, "CDF": struct{}{}, "CHF": struct{}{}, "CLP": struct{}{}, "CNY": struct{}{}, "COP": struct{}{}, "CRC": struct{}{}, "CZK": struct{}{}, "DKK": struct{}{}, "DOP": struct{}{}, "DZD": struct{}{}, "EGP": struct{}{}, "ETB": struct{}{}, "EUR": struct{}{}, "GBP": struct{}{}, "GEL": struct{}{}, "GGP": struct{}{}, "GHS": struct{}{}, "GIP": struct{}{}, "GTQ": struct{}{}, "HKD": struct{}{}, "HNL": struct{}{}, "HRK": struct{}{}, "HUF": struct{}{}, "IDR": struct{}{}, "ILS": struct{}{}, "INR": struct{}{}, "IQD": struct{}{}, "IRR": struct{}{}, "ISK": struct{}{}, "JMD": struct{}{}, "JOD": struct{}{}, "JPY": struct{}{}, "KES": struct{}{}, "KGS": struct{}{}, "KHR": struct{}{}, "KRW": struct{}{}, "KWD": struct{}{}, "KZT": struct{}{}, "LBP": struct{}{}, "LKR": struct{}{}, "LSL": struct{}{}, "MAD": struct{}{}, "MDL": struct{}{}, "MMK": struct{}{}, "MOP": struct{}{}, "MUR": struct{}{}, "MWK": struct{}{}, "MXN": struct{}{}, "MYR": struct{}{}, "NAD": struct{}{}, "NGN": struct{}{}, "NIO": struct{}{}, "NOK": struct{}{}, "NPR": struct{}{}, "NZD": struct{}{}, "OMR": struct{}{}, "PAB": struct{}{}, "PEN": struct{}{}, "PGK": struct{}{}, "PHP": struct{}{}, "PKR": struct{}{}, "PLN": struct{}{}, "PYG": struct{}{}, "QAR": struct{}{}, "RON": struct{}{}, "RUB": struct{}{}, "RWF": struct{}{}, "SAR": struct{}{}, "SBD": struct{}{}, "SEK": struct{}{}, "SGD": struct{}{}, "SHP": struct{}{}, "SZL": struct{}{}, "THB": struct{}{}, "TMT": struct{}{}, "TND": struct{}{}, "TOP": struct{}{}, "TRY": struct{}{}, "TTD": struct{}{}, "TWD": struct{}{}, "TZS": struct{}{}, "UAH": struct{}{}, "UGX": struct{}{}, "USD": struct{}{}, "UYU": struct{}{}, "UZS": struct{}{}, "VEF": struct{}{}, "VND": struct{}{}, "VUV": struct{}{}, "XAF": struct{}{}, "XAU": struct{}{}, "XCD": struct{}{}, "XOF": struct{}{}, "ZAR": struct{}{}, "ZMW": struct{}{}}
