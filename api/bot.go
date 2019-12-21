@@ -27,20 +27,21 @@ const (
 	secondPage = `Выберите фиатную валюту:
 Пример: USD
 `
-	thirdPage  = "Введите сумму в %s:\nПример: 7000"
+	thirdPage = `Введите сумму в %s:
+Пример: 7000`
 	fourthPage = `Введите условие:
 Пример: <= или >= или == или < или >
 `
 )
 
 const (
-	errCryptoInput = "❌ Попробуйте другую крипту\n%s"
-	errFiatInput   = "❌ Попробуйте другой фиат\n%s"
+	errCryptoInput = "❌ Попробуйте другую крипто валюту\n%s"
+	errFiatInput   = "❌ Попробуйте другую фиатную валюту\n%s"
 	errPriceInput  = "❌ Введите валидную сумму"
 )
 
 var fiats = map[string]struct{}{"AED": struct{}{}, "ALL": struct{}{}, "AMD": struct{}{}, "AOA": struct{}{}, "ARS": struct{}{}, "AUD": struct{}{}, "BAM": struct{}{}, "BDT": struct{}{}, "BGN": struct{}{}, "BHD": struct{}{}, "BIF": struct{}{}, "BND": struct{}{}, "BOB": struct{}{}, "BRL": struct{}{}, "BSD": struct{}{}, "BTC": struct{}{}, "BTN": struct{}{}, "BWP": struct{}{}, "BYN": struct{}{}, "CAD": struct{}{}, "CDF": struct{}{}, "CHF": struct{}{}, "CLP": struct{}{}, "CNY": struct{}{}, "COP": struct{}{}, "CRC": struct{}{}, "CZK": struct{}{}, "DKK": struct{}{}, "DOP": struct{}{}, "DZD": struct{}{}, "EGP": struct{}{}, "ETB": struct{}{}, "EUR": struct{}{}, "GBP": struct{}{}, "GEL": struct{}{}, "GGP": struct{}{}, "GHS": struct{}{}, "GIP": struct{}{}, "GTQ": struct{}{}, "HKD": struct{}{}, "HNL": struct{}{}, "HRK": struct{}{}, "HUF": struct{}{}, "IDR": struct{}{}, "ILS": struct{}{}, "INR": struct{}{}, "IQD": struct{}{}, "IRR": struct{}{}, "ISK": struct{}{}, "JMD": struct{}{}, "JOD": struct{}{}, "JPY": struct{}{}, "KES": struct{}{}, "KGS": struct{}{}, "KHR": struct{}{}, "KRW": struct{}{}, "KWD": struct{}{}, "KZT": struct{}{}, "LBP": struct{}{}, "LKR": struct{}{}, "LSL": struct{}{}, "MAD": struct{}{}, "MDL": struct{}{}, "MMK": struct{}{}, "MOP": struct{}{}, "MUR": struct{}{}, "MWK": struct{}{}, "MXN": struct{}{}, "MYR": struct{}{}, "NAD": struct{}{}, "NGN": struct{}{}, "NIO": struct{}{}, "NOK": struct{}{}, "NPR": struct{}{}, "NZD": struct{}{}, "OMR": struct{}{}, "PAB": struct{}{}, "PEN": struct{}{}, "PGK": struct{}{}, "PHP": struct{}{}, "PKR": struct{}{}, "PLN": struct{}{}, "PYG": struct{}{}, "QAR": struct{}{}, "RON": struct{}{}, "RUB": struct{}{}, "RWF": struct{}{}, "SAR": struct{}{}, "SBD": struct{}{}, "SEK": struct{}{}, "SGD": struct{}{}, "SHP": struct{}{}, "SZL": struct{}{}, "THB": struct{}{}, "TMT": struct{}{}, "TND": struct{}{}, "TOP": struct{}{}, "TRY": struct{}{}, "TTD": struct{}{}, "TWD": struct{}{}, "TZS": struct{}{}, "UAH": struct{}{}, "UGX": struct{}{}, "USD": struct{}{}, "UYU": struct{}{}, "UZS": struct{}{}, "VEF": struct{}{}, "VND": struct{}{}, "VUV": struct{}{}, "XAF": struct{}{}, "XAU": struct{}{}, "XCD": struct{}{}, "XOF": struct{}{}, "ZAR": struct{}{}, "ZMW": struct{}{}}
-var cryptoCurrencies = map[string]struct{}{"AED": struct{}{}, "ALL": struct{}{}, "AMD": struct{}{}, "AOA": struct{}{}, "ARS": struct{}{}, "AUD": struct{}{}, "BAM": struct{}{}, "BDT": struct{}{}, "BGN": struct{}{}, "BHD": struct{}{}, "BIF": struct{}{}, "BND": struct{}{}, "BOB": struct{}{}, "BRL": struct{}{}, "BSD": struct{}{}, "BTC": struct{}{}, "BTN": struct{}{}, "BWP": struct{}{}, "BYN": struct{}{}, "CAD": struct{}{}, "CDF": struct{}{}, "CHF": struct{}{}, "CLP": struct{}{}, "CNY": struct{}{}, "COP": struct{}{}, "CRC": struct{}{}, "CZK": struct{}{}, "DKK": struct{}{}, "DOP": struct{}{}, "DZD": struct{}{}, "EGP": struct{}{}, "ETB": struct{}{}, "EUR": struct{}{}, "GBP": struct{}{}, "GEL": struct{}{}, "GGP": struct{}{}, "GHS": struct{}{}, "GIP": struct{}{}, "GTQ": struct{}{}, "HKD": struct{}{}, "HNL": struct{}{}, "HRK": struct{}{}, "HUF": struct{}{}, "IDR": struct{}{}, "ILS": struct{}{}, "INR": struct{}{}, "IQD": struct{}{}, "IRR": struct{}{}, "ISK": struct{}{}, "JMD": struct{}{}, "JOD": struct{}{}, "JPY": struct{}{}, "KES": struct{}{}, "KGS": struct{}{}, "KHR": struct{}{}, "KRW": struct{}{}, "KWD": struct{}{}, "KZT": struct{}{}, "LBP": struct{}{}, "LKR": struct{}{}, "LSL": struct{}{}, "MAD": struct{}{}, "MDL": struct{}{}, "MMK": struct{}{}, "MOP": struct{}{}, "MUR": struct{}{}, "MWK": struct{}{}, "MXN": struct{}{}, "MYR": struct{}{}, "NAD": struct{}{}, "NGN": struct{}{}, "NIO": struct{}{}, "NOK": struct{}{}, "NPR": struct{}{}, "NZD": struct{}{}, "OMR": struct{}{}, "PAB": struct{}{}, "PEN": struct{}{}, "PGK": struct{}{}, "PHP": struct{}{}, "PKR": struct{}{}, "PLN": struct{}{}, "PYG": struct{}{}, "QAR": struct{}{}, "RON": struct{}{}, "RUB": struct{}{}, "RWF": struct{}{}, "SAR": struct{}{}, "SBD": struct{}{}, "SEK": struct{}{}, "SGD": struct{}{}, "SHP": struct{}{}, "SZL": struct{}{}, "THB": struct{}{}, "TMT": struct{}{}, "TND": struct{}{}, "TOP": struct{}{}, "TRY": struct{}{}, "TTD": struct{}{}, "TWD": struct{}{}, "TZS": struct{}{}, "UAH": struct{}{}, "UGX": struct{}{}, "USD": struct{}{}, "UYU": struct{}{}, "UZS": struct{}{}, "VEF": struct{}{}, "VND": struct{}{}, "VUV": struct{}{}, "XAF": struct{}{}, "XAU": struct{}{}, "XCD": struct{}{}, "XOF": struct{}{}, "ZAR": struct{}{}, "ZMW": struct{}{}}
+var cryptoCurrencies = map[string]struct{}{"ADA": struct{}{}, "AE": struct{}{}, "ALGO": struct{}{}, "ARDR": struct{}{}, "ATOM": struct{}{}, "BCD": struct{}{}, "BCH": struct{}{}, "BCN": struct{}{}, "BNB": struct{}{}, "BSV": struct{}{}, "BTC": struct{}{}, "BTG": struct{}{}, "BTM": struct{}{}, "BTS": struct{}{}, "BTT": struct{}{}, "CENNZ": struct{}{}, "DASH": struct{}{}, "DCR": struct{}{}, "DGB": struct{}{}, "DOGE": struct{}{}, "EOS": struct{}{}, "ETC": struct{}{}, "ETH": struct{}{}, "ICX": struct{}{}, "IOST": struct{}{}, "KMD": struct{}{}, "LSK": struct{}{}, "LTC": struct{}{}, "LUNA": struct{}{}, "MONA": struct{}{}, "NANO": struct{}{}, "NEO": struct{}{}, "NRG": struct{}{}, "ONT": struct{}{}, "QTUM": struct{}{}, "RVN": struct{}{}, "STEEM": struct{}{}, "STRAT": struct{}{}, "THETA": struct{}{}, "TOMO": struct{}{}, "TRX": struct{}{}, "VET": struct{}{}, "VSYS": struct{}{}, "WAVES": struct{}{}, "XEM": struct{}{}, "XLM": struct{}{}, "XMR": struct{}{}, "XRP": struct{}{}, "XTZ": struct{}{}, "XVG": struct{}{}, "ZEC": struct{}{}, "ZEN": struct{}{}, "ZIL": struct{}{}}
 
 type BotProvider struct {
 	Channel  *amqp.Channel
@@ -91,6 +92,13 @@ func (c *cache) get(k int64) (ps []page, ok bool) {
 		return nil, false
 	}
 	return
+}
+
+func (c *cache) back(k int64) {
+	c.mu.Lock()
+	ps := c.subscribers[k]
+	c.subscribers[k] = ps[:len(ps)-1]
+	c.mu.Unlock()
 }
 
 func (c *cache) delete(k int64) {
@@ -160,6 +168,7 @@ func (b *Bot) Processing() {
 			b.cache.set(chatID, p)
 			text := p.giveContent(0)
 			msg := tgbotapi.NewMessage(chatID, text)
+			msg.ReplyMarkup = backKeyBoard
 			b.api.Send(msg)
 			continue
 		case "help":
@@ -173,24 +182,38 @@ func (b *Bot) Processing() {
 			continue
 		}
 
+		if userText == "back" {
+			var text string
+			if len(pages) == 4 {
+				text = pages[len(pages)-2].giveContent(len(pages) - 2)
+			} else {
+				p := page{}
+				text = p.giveContent(len(pages) - 2)
+			}
+			msg := tgbotapi.NewMessage(chatID, text)
+			b.cache.back(chatID)
+			b.api.Send(msg)
+			continue
+		}
+
 		if pages[len(pages)-1].number == 0 {
-			_, ok := fiats[strings.ToUpper(userText)]
+			_, ok := cryptoCurrencies[strings.ToUpper(userText)]
 			if !ok {
-				pages, _ := b.cache.get(chatID)
 				p := page{}
 				text := p.giveContent(len(pages) - 1)
-				b.api.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf(errCryptoInput, text)))
+				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf(errCryptoInput, text))
+				b.api.Send(msg)
 				continue
 			}
 		}
 
 		if pages[len(pages)-1].number == 1 {
-			_, ok := cryptoCurrencies[strings.ToUpper(userText)]
+			_, ok := fiats[strings.ToUpper(userText)]
 			if !ok {
-				pages, _ := b.cache.get(chatID)
 				p := page{}
 				text := p.giveContent(len(pages) - 1)
-				b.api.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf(errFiatInput, text)))
+				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf(errFiatInput, text))
+				b.api.Send(msg)
 				continue
 			}
 		}
@@ -279,6 +302,21 @@ func splitArgs(args []page, chatID int64) alert {
 		URL:       convChatID,
 	}
 }
+
+var backKeyBoard = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(
+	tgbotapi.NewKeyboardButton("back")),
+)
+
+var conditionsKeyBoard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(">="),
+		tgbotapi.NewKeyboardButton("=="),
+		tgbotapi.NewKeyboardButton("<=")),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(">"),
+		tgbotapi.NewKeyboardButton("<"),
+	),
+)
 
 // Cryptos:
 //[HKD HNL BWP XOF PHP BHD KES BTC IQD IRR NIO ARS ETB RUB SZL AUD XCD KHR CHF NPR RON SEK KZT CRC XAU TWD USD BSD AED GBP OMR BRL CLP GIP JPY BYN NOK NGN TOP CDF PGK DZD PYG TND KWD LBP COP BIF PAB TTD TMT ISK BND VEF SAR KRW PLN SBD PEN HUF AMD MOP NZD GHS BAM XAF EUR EGP LSL MDL THB TRY ZMW QAR INR BOB GEL BTN CNY GTQ UAH UYU VUV MWK MAD KGS LKR MYR ILS ZAR VND HRK UGX UZS MUR CZK MXN PKR JOD AOA MMK DKK IDR BGN SHP JMD NAD TZS ALL CAD DOP GGP BDT RWF SGD]

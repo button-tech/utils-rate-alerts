@@ -268,17 +268,11 @@ func (r *Receiver) checkStatusAccepted(block cache.ConditionBlock) error {
 	t := time.NewTicker(time.Second * 3)
 
 	counter := 0
+	url := r.makeURL(block)
 	for ; counter < 4; <-t.C {
-		if strings.HasPrefix("http", block.URL) {
-			if err = checkURL(executedCondition(block), block.URL); err != nil {
-				counter++
-				continue
-			}
-		} else {
-			if err = checkURL(executedCondition(block), r.botAlertURL); err != nil {
-				counter++
-				continue
-			}
+		if err = checkURL(executedCondition(block), url); err != nil {
+			counter++
+			continue
 		}
 
 		if err := r.store.Delete(block); err != nil {
@@ -288,6 +282,15 @@ func (r *Receiver) checkStatusAccepted(block cache.ConditionBlock) error {
 	}
 
 	return err
+}
+
+func (r *Receiver) makeURL(b cache.ConditionBlock) (url string) {
+	if strings.HasPrefix("http", b.URL) {
+		url = b.URL
+	} else {
+		url = r.botAlertURL
+	}
+	return
 }
 
 func checkURL(payload *trueCondition, url string) error {
