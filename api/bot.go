@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,7 +15,7 @@ import (
 
 const (
 	helpMessage        = `/alert - for use`
-	errorMsg           = `❗ Произошла ошибка. Попробуйте позже`
+	errorMsg           = `❌ Произошла ошибка. Попробуйте позже`
 	alertMessage       = `✅ Вы подписаны на уведомление`
 	alertResultMessage = `ℹ️ Уведомление о %s
 Текущая цена: %s %s
@@ -35,13 +37,22 @@ const (
 )
 
 const (
-	errCryptoInput = "❌ Попробуйте другую крипто валюту"
-	errFiatInput   = "❌ Попробуйте другую фиатную валюту"
-	errPriceInput  = "❌ Введите валидную сумму"
+	errCryptoInput    = "❌ Попробуйте другую крипто валюту\nПример: BTC"
+	errFiatInput      = "❌ Попробуйте другую фиатную валюту\nПример: USD"
+	errPriceInput     = "❌ Введите валидную сумму\nПример: 7000"
+	errConditionInput = "❌ Введите доступное условие\nПример: <= или >= или == или < или >"
 )
 
 var fiats = map[string]struct{}{"AED": struct{}{}, "ALL": struct{}{}, "AMD": struct{}{}, "AOA": struct{}{}, "ARS": struct{}{}, "AUD": struct{}{}, "BAM": struct{}{}, "BDT": struct{}{}, "BGN": struct{}{}, "BHD": struct{}{}, "BIF": struct{}{}, "BND": struct{}{}, "BOB": struct{}{}, "BRL": struct{}{}, "BSD": struct{}{}, "BTC": struct{}{}, "BTN": struct{}{}, "BWP": struct{}{}, "BYN": struct{}{}, "CAD": struct{}{}, "CDF": struct{}{}, "CHF": struct{}{}, "CLP": struct{}{}, "CNY": struct{}{}, "COP": struct{}{}, "CRC": struct{}{}, "CZK": struct{}{}, "DKK": struct{}{}, "DOP": struct{}{}, "DZD": struct{}{}, "EGP": struct{}{}, "ETB": struct{}{}, "EUR": struct{}{}, "GBP": struct{}{}, "GEL": struct{}{}, "GGP": struct{}{}, "GHS": struct{}{}, "GIP": struct{}{}, "GTQ": struct{}{}, "HKD": struct{}{}, "HNL": struct{}{}, "HRK": struct{}{}, "HUF": struct{}{}, "IDR": struct{}{}, "ILS": struct{}{}, "INR": struct{}{}, "IQD": struct{}{}, "IRR": struct{}{}, "ISK": struct{}{}, "JMD": struct{}{}, "JOD": struct{}{}, "JPY": struct{}{}, "KES": struct{}{}, "KGS": struct{}{}, "KHR": struct{}{}, "KRW": struct{}{}, "KWD": struct{}{}, "KZT": struct{}{}, "LBP": struct{}{}, "LKR": struct{}{}, "LSL": struct{}{}, "MAD": struct{}{}, "MDL": struct{}{}, "MMK": struct{}{}, "MOP": struct{}{}, "MUR": struct{}{}, "MWK": struct{}{}, "MXN": struct{}{}, "MYR": struct{}{}, "NAD": struct{}{}, "NGN": struct{}{}, "NIO": struct{}{}, "NOK": struct{}{}, "NPR": struct{}{}, "NZD": struct{}{}, "OMR": struct{}{}, "PAB": struct{}{}, "PEN": struct{}{}, "PGK": struct{}{}, "PHP": struct{}{}, "PKR": struct{}{}, "PLN": struct{}{}, "PYG": struct{}{}, "QAR": struct{}{}, "RON": struct{}{}, "RUB": struct{}{}, "RWF": struct{}{}, "SAR": struct{}{}, "SBD": struct{}{}, "SEK": struct{}{}, "SGD": struct{}{}, "SHP": struct{}{}, "SZL": struct{}{}, "THB": struct{}{}, "TMT": struct{}{}, "TND": struct{}{}, "TOP": struct{}{}, "TRY": struct{}{}, "TTD": struct{}{}, "TWD": struct{}{}, "TZS": struct{}{}, "UAH": struct{}{}, "UGX": struct{}{}, "USD": struct{}{}, "UYU": struct{}{}, "UZS": struct{}{}, "VEF": struct{}{}, "VND": struct{}{}, "VUV": struct{}{}, "XAF": struct{}{}, "XAU": struct{}{}, "XCD": struct{}{}, "XOF": struct{}{}, "ZAR": struct{}{}, "ZMW": struct{}{}}
 var cryptoCurrencies = map[string]struct{}{"ADA": struct{}{}, "AE": struct{}{}, "ALGO": struct{}{}, "ARDR": struct{}{}, "ATOM": struct{}{}, "BCD": struct{}{}, "BCH": struct{}{}, "BCN": struct{}{}, "BNB": struct{}{}, "BSV": struct{}{}, "BTC": struct{}{}, "BTG": struct{}{}, "BTM": struct{}{}, "BTS": struct{}{}, "BTT": struct{}{}, "CENNZ": struct{}{}, "DASH": struct{}{}, "DCR": struct{}{}, "DGB": struct{}{}, "DOGE": struct{}{}, "EOS": struct{}{}, "ETC": struct{}{}, "ETH": struct{}{}, "ICX": struct{}{}, "IOST": struct{}{}, "KMD": struct{}{}, "LSK": struct{}{}, "LTC": struct{}{}, "LUNA": struct{}{}, "MONA": struct{}{}, "NANO": struct{}{}, "NEO": struct{}{}, "NRG": struct{}{}, "ONT": struct{}{}, "QTUM": struct{}{}, "RVN": struct{}{}, "STEEM": struct{}{}, "STRAT": struct{}{}, "THETA": struct{}{}, "TOMO": struct{}{}, "TRX": struct{}{}, "VET": struct{}{}, "VSYS": struct{}{}, "WAVES": struct{}{}, "XEM": struct{}{}, "XLM": struct{}{}, "XMR": struct{}{}, "XRP": struct{}{}, "XTZ": struct{}{}, "XVG": struct{}{}, "ZEC": struct{}{}, "ZEN": struct{}{}, "ZIL": struct{}{}}
+
+var conditionsVarifier = map[string]struct{}{
+	">":  {},
+	"<":  {},
+	"==": {},
+	">=": {},
+	"<=": {},
+}
 
 type BotProvider struct {
 	Channel  *amqp.Channel
@@ -97,9 +108,10 @@ func (c *cache) get(k int64) (ps []page, ok bool) {
 func (c *cache) back(k int64) {
 	c.mu.Lock()
 	ps := c.subscribers[k]
-	if len(ps) > 1 {
-		c.subscribers[k] = ps[:len(ps)-1]
+	if len(ps) < 1 {
+		return
 	}
+	c.subscribers[k] = ps[:len(ps)-1]
 	c.mu.Unlock()
 }
 
@@ -153,100 +165,125 @@ func (p *page) giveContent(page int) (c string) {
 	return
 }
 
-func (b *Bot) Processing() {
+func (b *Bot) Processing(ctx context.Context, wg *sync.WaitGroup) {
 	for update := range b.tgChannel {
-		if update.Message == nil {
-			continue
-		}
+		select {
+		case <-ctx.Done():
+			log.Println("receive bots updates shutdown")
+			wg.Done()
+			return
+		default:
+			if update.Message == nil {
+				continue
+			}
 
-		chatID := update.Message.Chat.ID
-		userText := update.Message.Text
-		switch update.Message.Command() {
-		case "alert":
-			if _, ok := b.cache.get(chatID); !ok {
+			if update.CallbackQuery != nil {
+				fmt.Print(update)
+
+				b.api.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
+
+				b.api.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data))
+			}
+
+			chatID := update.Message.Chat.ID
+			userText := update.Message.Text
+			switch update.Message.Command() {
+			case "alert":
+				if _, ok := b.cache.get(chatID); !ok {
+					b.cache.delete(chatID)
+				}
+				p := page{userInput: "", number: 0}
+				b.cache.set(chatID, p)
+				text := p.giveContent(0)
+				msg := tgbotapi.NewMessage(chatID, text)
+				msg.ReplyMarkup = backKeyBoard
+				b.api.Send(msg)
+				continue
+			case "help":
+				b.api.Send(help(chatID))
+				continue
+			}
+
+			pages, ok := b.cache.get(chatID)
+			if !ok {
+				b.api.Send(help(chatID))
+				continue
+			}
+
+			if userText == "back" {
+				var text string
+				if len(pages) == 4 {
+					text = pages[len(pages)-2].giveContent(len(pages) - 2)
+				} else {
+					p := page{}
+					text = p.giveContent(len(pages) - 2)
+				}
+				msg := tgbotapi.NewMessage(chatID, text)
+				b.cache.back(chatID)
+				b.api.Send(msg)
+				continue
+			}
+
+			if pages[len(pages)-1].number == 0 {
+				_, ok := cryptoCurrencies[strings.ToUpper(userText)]
+				if !ok {
+					//p := page{}
+					//text := p.giveContent(len(pages) - 1)
+					msg := tgbotapi.NewMessage(chatID, errCryptoInput)
+					b.api.Send(msg)
+					continue
+				}
+			}
+
+			if pages[len(pages)-1].number == 1 {
+				_, ok := fiats[strings.ToUpper(userText)]
+				if !ok {
+					//p := page{}
+					//text := p.giveContent(len(pages) - 1)
+					msg := tgbotapi.NewMessage(chatID, errFiatInput)
+					b.api.Send(msg)
+					continue
+				}
+			}
+
+			if pages[len(pages)-1].number == 2 {
+				_, err := strconv.ParseFloat(userText, 10)
+				if err != nil {
+					b.api.Send(tgbotapi.NewMessage(chatID, errPriceInput))
+					continue
+				}
+			}
+
+			if pages[len(pages)-1].number == 3 {
+				if _, ok := conditionsVarifier[userText]; !ok {
+					b.api.Send(tgbotapi.NewMessage(chatID, errConditionInput))
+					continue
+				}
+			}
+
+			p := page{
+				userInput: userText,
+				number:    pages[len(pages)-1].number + 1,
+			}
+			pages = b.cache.set(chatID, p)
+			text := p.giveContent(len(pages) - 1)
+			msg := tgbotapi.NewMessage(chatID, text)
+			if len(pages) == 4 {
+				msg.ReplyMarkup = numericKeyboard
+			}
+			b.api.Send(msg)
+
+			if len(pages) == 5 {
+				alert := splitArgs(pages[1:], chatID)
+				var text string
+				if err := b.subscribeUser(alert); err != nil {
+					text = errorMsg
+				} else {
+					text = alertMessage
+				}
+				b.api.Send(tgbotapi.NewMessage(chatID, text))
 				b.cache.delete(chatID)
 			}
-			p := page{userInput: "", number: 0}
-			b.cache.set(chatID, p)
-			text := p.giveContent(0)
-			msg := tgbotapi.NewMessage(chatID, text)
-			msg.ReplyMarkup = backKeyBoard
-			b.api.Send(msg)
-			continue
-		case "help":
-			b.api.Send(help(chatID))
-			continue
-		}
-
-		pages, ok := b.cache.get(chatID)
-		if !ok {
-			b.api.Send(help(chatID))
-			continue
-		}
-
-		if userText == "back" {
-			var text string
-			if len(pages) == 4 {
-				text = pages[len(pages)-2].giveContent(len(pages) - 2)
-			} else {
-				p := page{}
-				text = p.giveContent(len(pages) - 2)
-			}
-			msg := tgbotapi.NewMessage(chatID, text)
-			b.cache.back(chatID)
-			b.api.Send(msg)
-			continue
-		}
-
-		if pages[len(pages)-1].number == 0 {
-			_, ok := cryptoCurrencies[strings.ToUpper(userText)]
-			if !ok {
-				//p := page{}
-				//text := p.giveContent(len(pages) - 1)
-				msg := tgbotapi.NewMessage(chatID, errCryptoInput)
-				b.api.Send(msg)
-				continue
-			}
-		}
-
-		if pages[len(pages)-1].number == 1 {
-			_, ok := fiats[strings.ToUpper(userText)]
-			if !ok {
-				//p := page{}
-				//text := p.giveContent(len(pages) - 1)
-				msg := tgbotapi.NewMessage(chatID, errFiatInput)
-				b.api.Send(msg)
-				continue
-			}
-		}
-
-		if pages[len(pages)-1].number == 2 {
-			_, err := strconv.ParseFloat(userText, 10)
-			if err != nil {
-				b.api.Send(tgbotapi.NewMessage(chatID, errPriceInput))
-				continue
-			}
-		}
-
-		p := page{
-			userInput: userText,
-			number:    pages[len(pages)-1].number + 1,
-		}
-		pages = b.cache.set(chatID, p)
-		text := p.giveContent(len(pages) - 1)
-		msg := tgbotapi.NewMessage(chatID, text)
-		b.api.Send(msg)
-
-		if len(pages) == 5 {
-			alert := splitArgs(pages[1:], chatID)
-			var text string
-			if err := b.subscribeUser(alert); err != nil {
-				text = errorMsg
-			} else {
-				text = alertMessage
-			}
-			b.api.Send(tgbotapi.NewMessage(chatID, text))
-			b.cache.delete(chatID)
 		}
 	}
 }
@@ -317,6 +354,19 @@ var conditionsKeyBoard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(">"),
 		tgbotapi.NewKeyboardButton("<"),
+	),
+)
+
+var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonURL("1.com", "http://1.com"),
+		tgbotapi.NewInlineKeyboardButtonSwitch("2sw", "open 2"),
+		tgbotapi.NewInlineKeyboardButtonData("3", "3"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("4", "4"),
+		tgbotapi.NewInlineKeyboardButtonData("5", "5"),
+		tgbotapi.NewInlineKeyboardButtonData("6", "6"),
 	),
 )
 

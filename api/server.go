@@ -1,10 +1,12 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jeyldii/rate-alerts/pkg/rabbitmq"
@@ -16,6 +18,7 @@ import (
 
 type Server struct {
 	Core     *fasthttp.Server
+	WG       sync.WaitGroup
 	Bot      *Bot
 	R        *routing.Router
 	G        *routing.RouteGroup
@@ -25,10 +28,11 @@ type Server struct {
 	PricesURL string
 }
 
-func NewServer() (*Server, error) {
+func NewServer(ctx context.Context) (*Server, error) {
 	server := Server{
 		R:         routing.New(),
 		PricesURL: os.Getenv("PRICES"),
+		WG:        sync.WaitGroup{},
 	}
 	server.R.Use(cors)
 	server.fs()
@@ -44,7 +48,7 @@ func NewServer() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	go b.Processing()
+	go b.Processing(ctx, &server.WG)
 	server.Bot = b
 
 	server.initBaseRoute()

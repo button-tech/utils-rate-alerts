@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -12,7 +13,9 @@ import (
 const port = ":5001"
 
 func main() {
-	s, err := api.NewServer()
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	s, err := api.NewServer(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,6 +43,8 @@ func main() {
 	}()
 
 	stop := <-signalEx
+	cancel()
 	log.Println("Received", stop)
+	s.WG.Wait()
 	log.Println("Waiting for all jobs to stop")
 }
