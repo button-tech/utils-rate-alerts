@@ -35,8 +35,8 @@ const (
 )
 
 const (
-	errCryptoInput = "❌ Попробуйте другую крипто валюту\n%s"
-	errFiatInput   = "❌ Попробуйте другую фиатную валюту\n%s"
+	errCryptoInput = "❌ Попробуйте другую крипто валюту"
+	errFiatInput   = "❌ Попробуйте другую фиатную валюту"
 	errPriceInput  = "❌ Введите валидную сумму"
 )
 
@@ -97,7 +97,9 @@ func (c *cache) get(k int64) (ps []page, ok bool) {
 func (c *cache) back(k int64) {
 	c.mu.Lock()
 	ps := c.subscribers[k]
-	c.subscribers[k] = ps[:len(ps)-1]
+	if len(ps) > 1 {
+		c.subscribers[k] = ps[:len(ps)-1]
+	}
 	c.mu.Unlock()
 }
 
@@ -199,9 +201,9 @@ func (b *Bot) Processing() {
 		if pages[len(pages)-1].number == 0 {
 			_, ok := cryptoCurrencies[strings.ToUpper(userText)]
 			if !ok {
-				p := page{}
-				text := p.giveContent(len(pages) - 1)
-				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf(errCryptoInput, text))
+				//p := page{}
+				//text := p.giveContent(len(pages) - 1)
+				msg := tgbotapi.NewMessage(chatID, errCryptoInput)
 				b.api.Send(msg)
 				continue
 			}
@@ -210,9 +212,9 @@ func (b *Bot) Processing() {
 		if pages[len(pages)-1].number == 1 {
 			_, ok := fiats[strings.ToUpper(userText)]
 			if !ok {
-				p := page{}
-				text := p.giveContent(len(pages) - 1)
-				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf(errFiatInput, text))
+				//p := page{}
+				//text := p.giveContent(len(pages) - 1)
+				msg := tgbotapi.NewMessage(chatID, errFiatInput)
 				b.api.Send(msg)
 				continue
 			}
