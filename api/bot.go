@@ -14,13 +14,16 @@ import (
 )
 
 const (
-	helpMessageENG     = `/alert - to sign up for a currency notice`
-	helpMessageRUS     = `/alert - подписаться на уведомление по валюте`
-	languageMessageRUS = "Выберите язык"
-	languageMessageENG = "Select language"
-	alertResultMessage = `ℹ️ Уведомление о %s
+	helpMessageENG        = `/alert - to sign up for a currency notice`
+	helpMessageRUS        = `/alert - подписаться на уведомление по валюте`
+	languageMessageRUS    = "Выберите язык"
+	languageMessageENG    = "Select language"
+	alertResultMessageRUS = `ℹ️ Уведомление о %s
 Текущая цена: %s %s
 Условие выполнения: %s %s %s`
+	alertResultMessageENG = `ℹ️ Notification of %s
+Current price: %s %s
+Execution Condition: %s %s %s`
 )
 
 const (
@@ -146,6 +149,15 @@ type cache struct {
 	mu          sync.Mutex
 	subscribers map[string][]page
 	language    map[string]string
+	alerts      map[string]userAlert
+}
+
+type userAlert struct {
+	currency  string
+	condition string
+	price     string
+	fiat      string
+	lastAlert int
 }
 
 type page struct {
@@ -158,7 +170,17 @@ func newCache() *cache {
 		mu:          sync.Mutex{},
 		subscribers: make(map[string][]page),
 		language:    make(map[string]string),
+		alerts:      make(map[string]userAlert),
 	}
+}
+
+func (c *cache) lastAlert(chatID int64) int {
+	k := keyGen(chatID)
+	alert, ok := c.alerts[k]
+	if !ok {
+		return 0
+	}
+	return alert.lastAlert
 }
 
 func (c *cache) checkLanguage(username string) (bool, string) {
@@ -400,7 +422,7 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			var msg tgbotapi.MessageConfig
 
 			if pages[len(pages)-1].number == 4 {
-				alert := splitArgs(pages[1:], chatID)
+				alert := splitArgs(pages[1:], chatID, language)
 				var text string
 				if err := b.subscribeUser(alert); err != nil {
 					text = handleErrorInput(4, language)
@@ -422,20 +444,28 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func help(id int64, language string) (m tgbotapi.MessageConfig) {
+func help(id int64, language string) tgbotapi.MessageConfig {
+	var text string
 	switch language {
 	case "english":
-		m = tgbotapi.NewMessage(id, helpMessageENG)
+		text = helpMessageENG
 	case "russian":
-		m = tgbotapi.NewMessage(id, helpMessageRUS)
+		text = helpMessageRUS
 	}
-	return
+	return tgbotapi.NewMessage(id, text)
 }
 
-func (b *Bot) AlertUser(c trueCondition) error {
+func completedAlertMessage(c trueCondition, language string) string {
+	var format string
 	uc := strings.ToUpper(c.Values.Currency)
-	alertMsg := fmt.Sprintf(
-		alertResultMessage,
+	switch language {
+	case "english":
+		format = alertResultMessageENG
+	case "russian":
+		format = alertResultMessageRUS
+	}
+	return fmt.Sprintf(
+		format,
 		uc,
 		c.Values.CurrentPrice,
 		strings.ToUpper(c.Values.Fiat),
@@ -443,7 +473,12 @@ func (b *Bot) AlertUser(c trueCondition) error {
 		c.Values.Condition,
 		c.Values.Price,
 	)
-	chatID, err := strconv.ParseInt(c.URL, 10, 64)
+}
+
+func (b *Bot) AlertUser(c trueCondition) error {
+	userSettings := strings.Split(c.URL, "_")
+	alertMsg := completedAlertMessage(c, userSettings[1])
+	chatID, err := strconv.ParseInt(userSettings[0], 10, 64)
 	if err != nil {
 		return err
 	}
@@ -471,14 +506,15 @@ func (b *Bot) subscribeUser(args alert) error {
 	return err
 }
 
-func splitArgs(args []page, chatID int64) alert {
+func splitArgs(args []page, chatID int64, language string) alert {
 	convChatID := strconv.FormatInt(chatID, 10)
+	l := fmt.Sprintf("%s_%s", convChatID, language)
 	return alert{
 		Currency:  args[0].userInput,
 		Fiat:      args[1].userInput,
 		Price:     args[2].userInput,
 		Condition: args[3].userInput,
-		URL:       convChatID,
+		URL:       l,
 	}
 }
 
@@ -494,16 +530,12 @@ func backKeyboard(language string) tgbotapi.ReplyKeyboardMarkup {
 }
 
 func conditionsKeyboard(language string) tgbotapi.ReplyKeyboardMarkup {
-	var backButton []tgbotapi.KeyboardButton
+	var text string
 	switch language {
 	case "russian":
-		backButton = tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("назад"),
-		)
+		text = "назад"
 	case "english":
-		backButton = tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("back"),
-		)
+		text = "back"
 	}
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
@@ -514,7 +546,9 @@ func conditionsKeyboard(language string) tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton(">"),
 			tgbotapi.NewKeyboardButton("<"),
 		),
-		backButton,
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(text),
+		),
 	)
 }
 
