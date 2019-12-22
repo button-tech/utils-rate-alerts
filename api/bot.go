@@ -14,34 +14,107 @@ import (
 )
 
 const (
-	helpMessage        = `/alert - for use`
-	errorMsg           = `❌ Произошла ошибка. Попробуйте позже`
-	alertMessage       = `✅ Вы подписаны на уведомление`
+	helpMessageENG     = `/alert - to sign up for a currency notice`
+	helpMessageRUS     = `/alert - подписаться на уведомление по валюте`
+	languageMessageRUS = "Выберите язык"
+	languageMessageENG = "Select language"
 	alertResultMessage = `ℹ️ Уведомление о %s
 Текущая цена: %s %s
 Условие выполнения: %s %s %s`
 )
 
 const (
-	firstPage = `Выберите крипто валюту:
+	firstPageRUS = `Выберите крипто валюту:
 Пример: BTC 
 `
-	secondPage = `Выберите фиатную валюту:
+	secondPageRUS = `Выберите фиатную валюту:
 Пример: USD
 `
-	thirdPage = `Введите сумму в %s:
+	thirdPageRUS = `Введите сумму в %s:
 Пример: 7000`
-	fourthPage = `Введите условие:
+	fourthPageRUS = `Введите условие:
 Пример: <= или >= или == или < или >
+`
+	firstPageENG = `Select crypto currency:
+Example: BTC 
+`
+	secondPageENG = `Select fiat currency:
+Example: USD
+`
+	thirdPageENG = `Enter the amount in %s:
+Example: 7000`
+	fourthPageENG = `Enter the condition:
+Example: <= или >= или == или < или >
 `
 )
 
 const (
-	errCryptoInput    = "❌ Попробуйте другую крипто валюту\nПример: BTC"
-	errFiatInput      = "❌ Попробуйте другую фиатную валюту\nПример: USD"
-	errPriceInput     = "❌ Введите валидную сумму\nПример: 7000"
-	errConditionInput = "❌ Введите доступное условие\nПример: <= или >= или == или < или >"
+	errCryptoInputRUS    = "❌ Попробуйте другую крипто валюту\nПример: BTC"
+	errFiatInputRUS      = "❌ Попробуйте другую фиатную валюту\nПример: USD"
+	errPriceInputRUS     = "❌ Введите валидную сумму\nПример: 7000"
+	errConditionInputRUS = "❌ Введите доступное условие\nПример: <= или >= или == или < или >"
+	errAlertMsgRUS       = `❌ Произошла ошибка. Попробуйте позже`
+	alertMessageRUS      = `✅ Вы подписаны на уведомление`
+
+	errCryptoInputENG    = "❌ Try another crypto currency\nExample: BTC"
+	errFiatInputENG      = "❌ Try another fiat currency\nExample: USD"
+	errPriceInputENG     = "❌ Enter valid amount\nExample: 7000"
+	errConditionInputENG = "❌ Enter an available condition\nExample: <= или >= или == или < или >"
+	errAlertMsgENG       = `❌ An error has occurred. try late`
+	alertMessageENG      = `✅ You subscribed to the notification`
 )
+
+func selectLanguageMsg(language string) (l string) {
+	switch language {
+	case "russian":
+		l = languageMessageRUS
+	case "english":
+		l = languageMessageENG
+	}
+	return
+}
+
+func handleErrorInput(page int64, language string) (err string) {
+	switch language {
+	case "russian":
+		switch page {
+		case 0:
+			err = errCryptoInputRUS
+		case 1:
+			err = errFiatInputRUS
+		case 2:
+			err = errPriceInputRUS
+		case 3:
+			err = errConditionInputRUS
+		case 4:
+			err = errAlertMsgRUS
+		}
+	case "english":
+		switch page {
+		case 0:
+			err = errCryptoInputENG
+		case 1:
+			err = errFiatInputENG
+		case 2:
+			err = errPriceInputENG
+		case 3:
+			err = errConditionInputENG
+		case 4:
+			err = errAlertMsgENG
+		}
+	}
+	return err
+}
+
+func alertMessage(language string) (n string) {
+	switch language {
+	case "russian":
+		n = alertMessageRUS
+	case "english":
+		n = alertMessageENG
+	}
+	return
+}
 
 var fiats = map[string]struct{}{"AED": struct{}{}, "ALL": struct{}{}, "AMD": struct{}{}, "AOA": struct{}{}, "ARS": struct{}{}, "AUD": struct{}{}, "BAM": struct{}{}, "BDT": struct{}{}, "BGN": struct{}{}, "BHD": struct{}{}, "BIF": struct{}{}, "BND": struct{}{}, "BOB": struct{}{}, "BRL": struct{}{}, "BSD": struct{}{}, "BTC": struct{}{}, "BTN": struct{}{}, "BWP": struct{}{}, "BYN": struct{}{}, "CAD": struct{}{}, "CDF": struct{}{}, "CHF": struct{}{}, "CLP": struct{}{}, "CNY": struct{}{}, "COP": struct{}{}, "CRC": struct{}{}, "CZK": struct{}{}, "DKK": struct{}{}, "DOP": struct{}{}, "DZD": struct{}{}, "EGP": struct{}{}, "ETB": struct{}{}, "EUR": struct{}{}, "GBP": struct{}{}, "GEL": struct{}{}, "GGP": struct{}{}, "GHS": struct{}{}, "GIP": struct{}{}, "GTQ": struct{}{}, "HKD": struct{}{}, "HNL": struct{}{}, "HRK": struct{}{}, "HUF": struct{}{}, "IDR": struct{}{}, "ILS": struct{}{}, "INR": struct{}{}, "IQD": struct{}{}, "IRR": struct{}{}, "ISK": struct{}{}, "JMD": struct{}{}, "JOD": struct{}{}, "JPY": struct{}{}, "KES": struct{}{}, "KGS": struct{}{}, "KHR": struct{}{}, "KRW": struct{}{}, "KWD": struct{}{}, "KZT": struct{}{}, "LBP": struct{}{}, "LKR": struct{}{}, "LSL": struct{}{}, "MAD": struct{}{}, "MDL": struct{}{}, "MMK": struct{}{}, "MOP": struct{}{}, "MUR": struct{}{}, "MWK": struct{}{}, "MXN": struct{}{}, "MYR": struct{}{}, "NAD": struct{}{}, "NGN": struct{}{}, "NIO": struct{}{}, "NOK": struct{}{}, "NPR": struct{}{}, "NZD": struct{}{}, "OMR": struct{}{}, "PAB": struct{}{}, "PEN": struct{}{}, "PGK": struct{}{}, "PHP": struct{}{}, "PKR": struct{}{}, "PLN": struct{}{}, "PYG": struct{}{}, "QAR": struct{}{}, "RON": struct{}{}, "RUB": struct{}{}, "RWF": struct{}{}, "SAR": struct{}{}, "SBD": struct{}{}, "SEK": struct{}{}, "SGD": struct{}{}, "SHP": struct{}{}, "SZL": struct{}{}, "THB": struct{}{}, "TMT": struct{}{}, "TND": struct{}{}, "TOP": struct{}{}, "TRY": struct{}{}, "TTD": struct{}{}, "TWD": struct{}{}, "TZS": struct{}{}, "UAH": struct{}{}, "UGX": struct{}{}, "USD": struct{}{}, "UYU": struct{}{}, "UZS": struct{}{}, "VEF": struct{}{}, "VND": struct{}{}, "VUV": struct{}{}, "XAF": struct{}{}, "XAU": struct{}{}, "XCD": struct{}{}, "XOF": struct{}{}, "ZAR": struct{}{}, "ZMW": struct{}{}}
 var cryptoCurrencies = map[string]struct{}{"ADA": struct{}{}, "AE": struct{}{}, "ALGO": struct{}{}, "ARDR": struct{}{}, "ATOM": struct{}{}, "BCD": struct{}{}, "BCH": struct{}{}, "BCN": struct{}{}, "BNB": struct{}{}, "BSV": struct{}{}, "BTC": struct{}{}, "BTG": struct{}{}, "BTM": struct{}{}, "BTS": struct{}{}, "BTT": struct{}{}, "CENNZ": struct{}{}, "DASH": struct{}{}, "DCR": struct{}{}, "DGB": struct{}{}, "DOGE": struct{}{}, "EOS": struct{}{}, "ETC": struct{}{}, "ETH": struct{}{}, "ICX": struct{}{}, "IOST": struct{}{}, "KMD": struct{}{}, "LSK": struct{}{}, "LTC": struct{}{}, "LUNA": struct{}{}, "MONA": struct{}{}, "NANO": struct{}{}, "NEO": struct{}{}, "NRG": struct{}{}, "ONT": struct{}{}, "QTUM": struct{}{}, "RVN": struct{}{}, "STEEM": struct{}{}, "STRAT": struct{}{}, "THETA": struct{}{}, "TOMO": struct{}{}, "TRX": struct{}{}, "VET": struct{}{}, "VSYS": struct{}{}, "WAVES": struct{}{}, "XEM": struct{}{}, "XLM": struct{}{}, "XMR": struct{}{}, "XRP": struct{}{}, "XTZ": struct{}{}, "XVG": struct{}{}, "ZEC": struct{}{}, "ZEN": struct{}{}, "ZIL": struct{}{}}
@@ -71,7 +144,8 @@ type Bot struct {
 
 type cache struct {
 	mu          sync.Mutex
-	subscribers map[int64][]page
+	subscribers map[string][]page
+	language    map[string]string
 }
 
 type page struct {
@@ -82,24 +156,45 @@ type page struct {
 func newCache() *cache {
 	return &cache{
 		mu:          sync.Mutex{},
-		subscribers: make(map[int64][]page),
+		subscribers: make(map[string][]page),
+		language:    make(map[string]string),
 	}
+}
+
+func (c *cache) checkLanguage(username string) (bool, string) {
+	c.mu.Lock()
+	l, ok := c.language[username]
+	c.mu.Unlock()
+	return ok, l
+}
+
+func (c *cache) setupLanguage(username, language string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.language[username] = language
+	return language
 }
 
 func (c *cache) set(k int64, p page) []page {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	val, ok := c.subscribers[k]
+	key := keyGen(k)
+	val, ok := c.subscribers[key]
 	if !ok {
-		c.subscribers[k] = make([]page, 0, 4)
+		c.subscribers[key] = make([]page, 0, 4)
 	}
 	val = append(val, p)
-	c.subscribers[k] = val
+	c.subscribers[key] = val
 	return val
 }
 
+func keyGen(k int64) string {
+	return strconv.FormatInt(k, 10)
+}
+
 func (c *cache) get(k int64) (ps []page, ok bool) {
-	if ps, ok = c.subscribers[k]; !ok {
+	key := keyGen(k)
+	if ps, ok = c.subscribers[key]; !ok {
 		return nil, false
 	}
 	return
@@ -108,17 +203,19 @@ func (c *cache) get(k int64) (ps []page, ok bool) {
 func (c *cache) back(k int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	ps := c.subscribers[k]
+	key := keyGen(k)
+	ps := c.subscribers[key]
 	if len(ps) <= 1 {
-		delete(c.subscribers, k)
+		delete(c.subscribers, key)
 		return
 	}
-	c.subscribers[k] = ps[:len(ps)-1]
+	c.subscribers[key] = ps[:len(ps)-1]
 }
 
 func (c *cache) delete(k int64) {
 	c.mu.Lock()
-	delete(c.subscribers, k)
+	key := keyGen(k)
+	delete(c.subscribers, key)
 	c.mu.Unlock()
 }
 
@@ -152,19 +249,36 @@ func SetupBot(c *amqp.Channel, q amqp.Queue, t string) BotProvider {
 	}
 }
 
-func (p *page) giveContent(page int) (c string) {
-	switch page {
-	case 0:
-		c = firstPage
-	case 1:
-		c = secondPage
-	case 2:
-		c = fmt.Sprintf(thirdPage, strings.ToUpper(p.userInput))
-	case 3:
-		c = fourthPage
-	case -1:
-		c = helpMessage
+func (p *page) giveContent(page int, language string) (c string) {
+	switch language {
+	case "russian":
+		switch page {
+		case 0:
+			c = firstPageRUS
+		case 1:
+			c = secondPageRUS
+		case 2:
+			c = fmt.Sprintf(thirdPageRUS, strings.ToUpper(p.userInput))
+		case 3:
+			c = fourthPageRUS
+		case -1:
+			c = helpMessageRUS
+		}
+	case "english":
+		switch page {
+		case 0:
+			c = firstPageENG
+		case 1:
+			c = secondPageENG
+		case 2:
+			c = fmt.Sprintf(thirdPageENG, strings.ToUpper(p.userInput))
+		case 3:
+			c = fourthPageENG
+		case -1:
+			c = helpMessageENG
+		}
 	}
+
 	return
 }
 
@@ -176,11 +290,29 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			wg.Done()
 			return
 		default:
+			var language string
+			if update.CallbackQuery != nil {
+				chatID := update.CallbackQuery.Message.Chat.ID
+				if _, ok := b.cache.get(chatID); ok {
+					b.cache.delete(chatID)
+				}
+				username := update.CallbackQuery.Message.Chat.UserName
+				language = b.cache.setupLanguage(username, update.CallbackQuery.Data)
+				msg := help(chatID, language)
+				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+				b.api.Send(msg)
+				continue
+			}
 			if update.Message == nil {
 				continue
 			}
 
 			chatID := update.Message.Chat.ID
+			var ok bool
+			ok, language = b.cache.checkLanguage(update.Message.Chat.UserName)
+			if !ok {
+				language = "english"
+			}
 			userText := update.Message.Text
 			switch update.Message.Command() {
 			case "alert":
@@ -189,33 +321,38 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 				}
 				p := page{userInput: "", number: 0}
 				b.cache.set(chatID, p)
-				text := p.giveContent(0)
+				text := p.giveContent(0, language)
 				msg := tgbotapi.NewMessage(chatID, text)
-				msg.ReplyMarkup = backKeyBoard
+				msg.ReplyMarkup = backKeyboard(language)
 				b.api.Send(msg)
 				continue
 			case "help":
-				b.api.Send(help(chatID))
+				b.api.Send(help(chatID, language))
+				continue
+			case "language":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, selectLanguageMsg(language))
+				msg.ReplyMarkup = languagesKeyBoard
+				b.api.Send(msg)
 				continue
 			}
 
 			pages, ok := b.cache.get(chatID)
 			if !ok {
-				b.api.Send(help(chatID))
+				b.api.Send(help(chatID, language))
 				continue
 			}
 
-			if userText == "back" {
+			if (userText == "back" && language == "english") || (userText == "назад" && language == "russian") {
 				var text string
 				if len(pages) == 4 {
-					text = pages[len(pages)-2].giveContent(len(pages) - 2)
+					text = pages[len(pages)-2].giveContent(len(pages)-2, language)
 				} else {
 					p := page{}
-					text = p.giveContent(len(pages) - 2)
+					text = p.giveContent(len(pages)-2, language)
 				}
 				msg := tgbotapi.NewMessage(chatID, text)
 				if len(pages) == 4 {
-					msg.ReplyMarkup = backKeyBoard
+					msg.ReplyMarkup = backKeyboard(language)
 				}
 				b.cache.back(chatID)
 				b.api.Send(msg)
@@ -225,9 +362,7 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			if pages[len(pages)-1].number == 0 {
 				_, ok := cryptoCurrencies[strings.ToUpper(userText)]
 				if !ok {
-					//p := page{}
-					//text := p.giveContent(len(pages) - 1)
-					msg := tgbotapi.NewMessage(chatID, errCryptoInput)
+					msg := tgbotapi.NewMessage(chatID, handleErrorInput(0, language))
 					b.api.Send(msg)
 					continue
 				}
@@ -236,9 +371,7 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			if pages[len(pages)-1].number == 1 {
 				_, ok := fiats[strings.ToUpper(userText)]
 				if !ok {
-					//p := page{}
-					//text := p.giveContent(len(pages) - 1)
-					msg := tgbotapi.NewMessage(chatID, errFiatInput)
+					msg := tgbotapi.NewMessage(chatID, handleErrorInput(1, language))
 					b.api.Send(msg)
 					continue
 				}
@@ -247,14 +380,14 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			if pages[len(pages)-1].number == 2 {
 				_, err := strconv.ParseFloat(userText, 10)
 				if err != nil {
-					b.api.Send(tgbotapi.NewMessage(chatID, errPriceInput))
+					b.api.Send(tgbotapi.NewMessage(chatID, handleErrorInput(2, language)))
 					continue
 				}
 			}
 
 			if pages[len(pages)-1].number == 3 {
 				if _, ok := conditionsVarifier[userText]; !ok {
-					b.api.Send(tgbotapi.NewMessage(chatID, errConditionInput))
+					b.api.Send(tgbotapi.NewMessage(chatID, handleErrorInput(3, language)))
 					continue
 				}
 			}
@@ -265,22 +398,23 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			}
 			pages = b.cache.set(chatID, p)
 			var msg tgbotapi.MessageConfig
-			if len(pages) == 5 {
+
+			if pages[len(pages)-1].number == 4 {
 				alert := splitArgs(pages[1:], chatID)
 				var text string
 				if err := b.subscribeUser(alert); err != nil {
-					text = errorMsg
+					text = handleErrorInput(4, language)
 				} else {
-					text = alertMessage
+					text = alertMessage(language)
 				}
 				msg = tgbotapi.NewMessage(chatID, text)
 				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 				b.cache.delete(chatID)
 			} else {
-				text := p.giveContent(len(pages) - 1)
+				text := p.giveContent(len(pages)-1, language)
 				msg = tgbotapi.NewMessage(chatID, text)
 				if len(pages) == 4 {
-					msg.ReplyMarkup = conditionsKeyBoard
+					msg.ReplyMarkup = conditionsKeyboard(language)
 				}
 			}
 			b.api.Send(msg)
@@ -288,8 +422,14 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func help(id int64) tgbotapi.MessageConfig {
-	return tgbotapi.NewMessage(id, helpMessage)
+func help(id int64, language string) (m tgbotapi.MessageConfig) {
+	switch language {
+	case "english":
+		m = tgbotapi.NewMessage(id, helpMessageENG)
+	case "russian":
+		m = tgbotapi.NewMessage(id, helpMessageRUS)
+	}
+	return
 }
 
 func (b *Bot) AlertUser(c trueCondition) error {
@@ -346,6 +486,41 @@ var backKeyBoard = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(
 	tgbotapi.NewKeyboardButton("back")),
 )
 
+func backKeyboard(language string) (m tgbotapi.ReplyKeyboardMarkup) {
+	switch language {
+	case "russian":
+		m = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("назад")))
+	case "english":
+		m = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("back")))
+	}
+	return
+}
+
+func conditionsKeyboard(language string) tgbotapi.ReplyKeyboardMarkup {
+	var backButton []tgbotapi.KeyboardButton
+	switch language {
+	case "russian":
+		backButton = tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("назад"),
+		)
+	case "english":
+		backButton = tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("back"),
+		)
+	}
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(">="),
+			tgbotapi.NewKeyboardButton("=="),
+			tgbotapi.NewKeyboardButton("<=")),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(">"),
+			tgbotapi.NewKeyboardButton("<"),
+		),
+		backButton,
+	)
+}
+
 var conditionsKeyBoard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(">="),
@@ -357,6 +532,13 @@ var conditionsKeyBoard = tgbotapi.NewReplyKeyboard(
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("back"),
+	),
+)
+
+var languagesKeyBoard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🇷🇺", "russian"),
+		tgbotapi.NewInlineKeyboardButtonData("🇺🇸", "english"),
 	),
 )
 
