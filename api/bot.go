@@ -482,18 +482,15 @@ func splitArgs(args []page, chatID int64) alert {
 	}
 }
 
-var backKeyBoard = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(
-	tgbotapi.NewKeyboardButton("back")),
-)
-
-func backKeyboard(language string) (m tgbotapi.ReplyKeyboardMarkup) {
+func backKeyboard(language string) tgbotapi.ReplyKeyboardMarkup {
+	var data string
 	switch language {
 	case "russian":
-		m = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("назад")))
+		data = "назад"
 	case "english":
-		m = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("back")))
+		data = "back"
 	}
-	return
+	return tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(data)))
 }
 
 func conditionsKeyboard(language string) tgbotapi.ReplyKeyboardMarkup {
@@ -520,20 +517,6 @@ func conditionsKeyboard(language string) tgbotapi.ReplyKeyboardMarkup {
 		backButton,
 	)
 }
-
-var conditionsKeyBoard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton(">="),
-		tgbotapi.NewKeyboardButton("=="),
-		tgbotapi.NewKeyboardButton("<=")),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton(">"),
-		tgbotapi.NewKeyboardButton("<"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("back"),
-	),
-)
 
 var languagesKeyBoard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
