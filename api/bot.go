@@ -119,10 +119,10 @@ func alertMessage(language string) (n string) {
 	return
 }
 
-var fiats = map[string]struct{}{"AED": struct{}{}, "ALL": struct{}{}, "AMD": struct{}{}, "AOA": struct{}{}, "ARS": struct{}{}, "AUD": struct{}{}, "BAM": struct{}{}, "BDT": struct{}{}, "BGN": struct{}{}, "BHD": struct{}{}, "BIF": struct{}{}, "BND": struct{}{}, "BOB": struct{}{}, "BRL": struct{}{}, "BSD": struct{}{}, "BTC": struct{}{}, "BTN": struct{}{}, "BWP": struct{}{}, "BYN": struct{}{}, "CAD": struct{}{}, "CDF": struct{}{}, "CHF": struct{}{}, "CLP": struct{}{}, "CNY": struct{}{}, "COP": struct{}{}, "CRC": struct{}{}, "CZK": struct{}{}, "DKK": struct{}{}, "DOP": struct{}{}, "DZD": struct{}{}, "EGP": struct{}{}, "ETB": struct{}{}, "EUR": struct{}{}, "GBP": struct{}{}, "GEL": struct{}{}, "GGP": struct{}{}, "GHS": struct{}{}, "GIP": struct{}{}, "GTQ": struct{}{}, "HKD": struct{}{}, "HNL": struct{}{}, "HRK": struct{}{}, "HUF": struct{}{}, "IDR": struct{}{}, "ILS": struct{}{}, "INR": struct{}{}, "IQD": struct{}{}, "IRR": struct{}{}, "ISK": struct{}{}, "JMD": struct{}{}, "JOD": struct{}{}, "JPY": struct{}{}, "KES": struct{}{}, "KGS": struct{}{}, "KHR": struct{}{}, "KRW": struct{}{}, "KWD": struct{}{}, "KZT": struct{}{}, "LBP": struct{}{}, "LKR": struct{}{}, "LSL": struct{}{}, "MAD": struct{}{}, "MDL": struct{}{}, "MMK": struct{}{}, "MOP": struct{}{}, "MUR": struct{}{}, "MWK": struct{}{}, "MXN": struct{}{}, "MYR": struct{}{}, "NAD": struct{}{}, "NGN": struct{}{}, "NIO": struct{}{}, "NOK": struct{}{}, "NPR": struct{}{}, "NZD": struct{}{}, "OMR": struct{}{}, "PAB": struct{}{}, "PEN": struct{}{}, "PGK": struct{}{}, "PHP": struct{}{}, "PKR": struct{}{}, "PLN": struct{}{}, "PYG": struct{}{}, "QAR": struct{}{}, "RON": struct{}{}, "RUB": struct{}{}, "RWF": struct{}{}, "SAR": struct{}{}, "SBD": struct{}{}, "SEK": struct{}{}, "SGD": struct{}{}, "SHP": struct{}{}, "SZL": struct{}{}, "THB": struct{}{}, "TMT": struct{}{}, "TND": struct{}{}, "TOP": struct{}{}, "TRY": struct{}{}, "TTD": struct{}{}, "TWD": struct{}{}, "TZS": struct{}{}, "UAH": struct{}{}, "UGX": struct{}{}, "USD": struct{}{}, "UYU": struct{}{}, "UZS": struct{}{}, "VEF": struct{}{}, "VND": struct{}{}, "VUV": struct{}{}, "XAF": struct{}{}, "XAU": struct{}{}, "XCD": struct{}{}, "XOF": struct{}{}, "ZAR": struct{}{}, "ZMW": struct{}{}}
-var cryptoCurrencies = map[string]struct{}{"ADA": struct{}{}, "AE": struct{}{}, "ALGO": struct{}{}, "ARDR": struct{}{}, "ATOM": struct{}{}, "BCD": struct{}{}, "BCH": struct{}{}, "BCN": struct{}{}, "BNB": struct{}{}, "BSV": struct{}{}, "BTC": struct{}{}, "BTG": struct{}{}, "BTM": struct{}{}, "BTS": struct{}{}, "BTT": struct{}{}, "CENNZ": struct{}{}, "DASH": struct{}{}, "DCR": struct{}{}, "DGB": struct{}{}, "DOGE": struct{}{}, "EOS": struct{}{}, "ETC": struct{}{}, "ETH": struct{}{}, "ICX": struct{}{}, "IOST": struct{}{}, "KMD": struct{}{}, "LSK": struct{}{}, "LTC": struct{}{}, "LUNA": struct{}{}, "MONA": struct{}{}, "NANO": struct{}{}, "NEO": struct{}{}, "NRG": struct{}{}, "ONT": struct{}{}, "QTUM": struct{}{}, "RVN": struct{}{}, "STEEM": struct{}{}, "STRAT": struct{}{}, "THETA": struct{}{}, "TOMO": struct{}{}, "TRX": struct{}{}, "VET": struct{}{}, "VSYS": struct{}{}, "WAVES": struct{}{}, "XEM": struct{}{}, "XLM": struct{}{}, "XMR": struct{}{}, "XRP": struct{}{}, "XTZ": struct{}{}, "XVG": struct{}{}, "ZEC": struct{}{}, "ZEN": struct{}{}, "ZIL": struct{}{}}
+var fiats = map[string]struct{}{"AED": {}, "ALL": {}, "AMD": {}, "AOA": {}, "ARS": {}, "AUD": {}, "BAM": {}, "BDT": {}, "BGN": {}, "BHD": {}, "BIF": {}, "BND": {}, "BOB": {}, "BRL": {}, "BSD": {}, "BTC": {}, "BTN": {}, "BWP": {}, "BYN": {}, "CAD": {}, "CDF": {}, "CHF": {}, "CLP": {}, "CNY": {}, "COP": {}, "CRC": {}, "CZK": {}, "DKK": {}, "DOP": {}, "DZD": {}, "EGP": {}, "ETB": {}, "EUR": {}, "GBP": {}, "GEL": {}, "GGP": {}, "GHS": {}, "GIP": {}, "GTQ": {}, "HKD": {}, "HNL": {}, "HRK": {}, "HUF": {}, "IDR": {}, "ILS": {}, "INR": {}, "IQD": {}, "IRR": {}, "ISK": {}, "JMD": {}, "JOD": {}, "JPY": {}, "KES": {}, "KGS": {}, "KHR": {}, "KRW": {}, "KWD": {}, "KZT": {}, "LBP": {}, "LKR": {}, "LSL": {}, "MAD": {}, "MDL": {}, "MMK": {}, "MOP": {}, "MUR": {}, "MWK": {}, "MXN": {}, "MYR": {}, "NAD": {}, "NGN": {}, "NIO": {}, "NOK": {}, "NPR": {}, "NZD": {}, "OMR": {}, "PAB": {}, "PEN": {}, "PGK": {}, "PHP": {}, "PKR": {}, "PLN": {}, "PYG": {}, "QAR": {}, "RON": {}, "RUB": {}, "RWF": {}, "SAR": {}, "SBD": {}, "SEK": {}, "SGD": {}, "SHP": {}, "SZL": {}, "THB": {}, "TMT": {}, "TND": {}, "TOP": {}, "TRY": {}, "TTD": {}, "TWD": {}, "TZS": {}, "UAH": {}, "UGX": {}, "USD": {}, "UYU": {}, "UZS": {}, "VEF": {}, "VND": {}, "VUV": {}, "XAF": {}, "XAU": {}, "XCD": {}, "XOF": {}, "ZAR": {}, "ZMW": {}}
+var cryptoCurrencies = map[string]struct{}{"ADA": {}, "AE": {}, "ALGO": {}, "ARDR": {}, "ATOM": {}, "BCD": {}, "BCH": {}, "BCN": {}, "BNB": {}, "BSV": {}, "BTC": {}, "BTG": {}, "BTM": {}, "BTS": {}, "BTT": {}, "CENNZ": {}, "DASH": {}, "DCR": {}, "DGB": {}, "DOGE": {}, "EOS": {}, "ETC": {}, "ETH": {}, "ICX": {}, "IOST": {}, "KMD": {}, "LSK": {}, "LTC": {}, "LUNA": {}, "MONA": {}, "NANO": {}, "NEO": {}, "NRG": {}, "ONT": {}, "QTUM": {}, "RVN": {}, "STEEM": {}, "STRAT": {}, "THETA": {}, "TOMO": {}, "TRX": {}, "VET": {}, "VSYS": {}, "WAVES": {}, "XEM": {}, "XLM": {}, "XMR": {}, "XRP": {}, "XTZ": {}, "XVG": {}, "ZEC": {}, "ZEN": {}, "ZIL": {}}
 
-var conditionsVarifier = map[string]struct{}{
+var conditionsVerifier = map[string]struct{}{
 	">":  {},
 	"<":  {},
 	"==": {},
@@ -322,7 +322,9 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 				language = b.cache.setupLanguage(username, update.CallbackQuery.Data)
 				msg := help(chatID, language)
 				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-				b.api.Send(msg)
+				if _, err := b.api.Send(msg); err != nil {
+					log.Println(err)
+				}
 				continue
 			}
 			if update.Message == nil {
@@ -346,21 +348,29 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 				text := p.giveContent(0, language)
 				msg := tgbotapi.NewMessage(chatID, text)
 				msg.ReplyMarkup = backKeyboard(language)
-				b.api.Send(msg)
+				if _, err := b.api.Send(msg); err != nil {
+					log.Println(err)
+				}
 				continue
 			case "help":
-				b.api.Send(help(chatID, language))
+				if _, err := b.api.Send(help(chatID, language)); err != nil {
+					log.Println(err)
+				}
 				continue
 			case "language":
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, selectLanguageMsg(language))
 				msg.ReplyMarkup = languagesKeyBoard
-				b.api.Send(msg)
+				if _, err := b.api.Send(msg); err != nil {
+					log.Println(err)
+				}
 				continue
 			}
 
 			pages, ok := b.cache.get(chatID)
 			if !ok {
-				b.api.Send(help(chatID, language))
+				if _, err := b.api.Send(help(chatID, language)); err != nil {
+					log.Println(err)
+				}
 				continue
 			}
 
@@ -371,13 +381,19 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 				} else {
 					p := page{}
 					text = p.giveContent(len(pages)-2, language)
+
 				}
 				msg := tgbotapi.NewMessage(chatID, text)
 				if len(pages) == 4 {
 					msg.ReplyMarkup = backKeyboard(language)
 				}
+				if len(pages) <= 1 {
+					msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+				}
 				b.cache.back(chatID)
-				b.api.Send(msg)
+				if _, err := b.api.Send(msg); err != nil {
+					log.Println(err)
+				}
 				continue
 			}
 
@@ -385,7 +401,9 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 				_, ok := cryptoCurrencies[strings.ToUpper(userText)]
 				if !ok {
 					msg := tgbotapi.NewMessage(chatID, handleErrorInput(0, language))
-					b.api.Send(msg)
+					if _, err := b.api.Send(msg); err != nil {
+						log.Println(err)
+					}
 					continue
 				}
 			}
@@ -394,7 +412,9 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 				_, ok := fiats[strings.ToUpper(userText)]
 				if !ok {
 					msg := tgbotapi.NewMessage(chatID, handleErrorInput(1, language))
-					b.api.Send(msg)
+					if _, err := b.api.Send(msg); err != nil {
+						log.Println(err)
+					}
 					continue
 				}
 			}
@@ -402,14 +422,18 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			if pages[len(pages)-1].number == 2 {
 				_, err := strconv.ParseFloat(userText, 10)
 				if err != nil {
-					b.api.Send(tgbotapi.NewMessage(chatID, handleErrorInput(2, language)))
+					if _, err := b.api.Send(tgbotapi.NewMessage(chatID, handleErrorInput(2, language))); err != nil {
+						log.Println(err)
+					}
 					continue
 				}
 			}
 
 			if pages[len(pages)-1].number == 3 {
-				if _, ok := conditionsVarifier[userText]; !ok {
-					b.api.Send(tgbotapi.NewMessage(chatID, handleErrorInput(3, language)))
+				if _, ok := conditionsVerifier[userText]; !ok {
+					if _, err := b.api.Send(tgbotapi.NewMessage(chatID, handleErrorInput(3, language))); err != nil {
+						log.Println(err)
+					}
 					continue
 				}
 			}
@@ -439,7 +463,9 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 					msg.ReplyMarkup = conditionsKeyboard(language)
 				}
 			}
-			b.api.Send(msg)
+			if _, err := b.api.Send(msg); err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
