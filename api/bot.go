@@ -4,12 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/imroc/req"
+	"github.com/pkg/errors"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	processCache "github.com/jeyldii/rate-alerts/pkg/storage/cache"
 	"github.com/streadway/amqp"
 )
 
@@ -52,20 +56,44 @@ Example: <= или >= или == или < или >
 )
 
 const (
-	errCryptoInputRUS    = "❌ Попробуйте другую крипто валюту\nПример: BTC"
-	errFiatInputRUS      = "❌ Попробуйте другую фиатную валюту\nПример: USD"
-	errPriceInputRUS     = "❌ Введите валидную сумму\nПример: 7000"
-	errConditionInputRUS = "❌ Введите доступное условие\nПример: <= или >= или == или < или >"
-	errAlertMsgRUS       = `❌ Произошла ошибка. Попробуйте позже`
-	alertMessageRUS      = `✅ Вы подписаны на уведомление`
+	errCryptoInputRUS     = "❌ Попробуйте другую крипто валюту\nПример: BTC"
+	errFiatInputRUS       = "❌ Попробуйте другую фиатную валюту\nПример: USD"
+	errPriceInputRUS      = "❌ Введите валидную сумму\nПример: 7000"
+	errConditionInputRUS  = "❌ Введите доступное условие\nПример: <= или >= или == или < или >"
+	errAlertMsgRUS        = `❌ Произошла ошибка. Попробуйте позже`
+	alertMessageRUS       = `✅ Вы подписаны на уведомление`
+	noAlertsMessageRUS    = `💤 Вы не подписаны на уведомления`
+	invalidAlertNumberRUS = "❌ Неверный номер уведомления"
 
-	errCryptoInputENG    = "❌ Try another crypto currency\nExample: BTC"
-	errFiatInputENG      = "❌ Try another fiat currency\nExample: USD"
-	errPriceInputENG     = "❌ Enter valid amount\nExample: 7000"
-	errConditionInputENG = "❌ Enter an available condition\nExample: <= или >= или == или < или >"
-	errAlertMsgENG       = `❌ An error has occurred. try late`
-	alertMessageENG      = `✅ You subscribed to the notification`
+	errCryptoInputENG     = "❌ Try another crypto currency\nExample: BTC"
+	errFiatInputENG       = "❌ Try another fiat currency\nExample: USD"
+	errPriceInputENG      = "❌ Enter valid amount\nExample: 7000"
+	errConditionInputENG  = "❌ Enter an available condition\nExample: <= или >= или == или < или >"
+	errAlertMsgENG        = `❌ An error has occurred. try late`
+	alertMessageENG       = `✅ You subscribed to the notification`
+	noAlertsMessageENG    = `💤 You have't got alerts`
+	invalidAlertNumberENG = "❌ Invalid alert number"
 )
+
+func selectAlertNumber(language string) (m string) {
+	switch language {
+	case "russian":
+		m = invalidAlertNumberRUS
+	case "english":
+		m = invalidAlertNumberENG
+	}
+	return
+}
+
+func selectNoAlertMessage(language string) (m string) {
+	switch language {
+	case "russian":
+		m = noAlertsMessageRUS
+	case "english":
+		m = noAlertsMessageENG
+	}
+	return
+}
 
 func selectLanguageMsg(language string) (l string) {
 	switch language {
@@ -131,15 +159,17 @@ var conditionsVerifier = map[string]struct{}{
 }
 
 type BotProvider struct {
-	Channel  *amqp.Channel
-	Queue    amqp.Queue
-	BotToken string
+	Channel      *amqp.Channel
+	Queue        amqp.Queue
+	BotToken     string
+	ProcessCache *processCache.Cache
 }
 
 type Bot struct {
-	api       *tgbotapi.BotAPI
-	tgChannel tgbotapi.UpdatesChannel
-	cache     *cache
+	api                 *tgbotapi.BotAPI
+	tgChannel           tgbotapi.UpdatesChannel
+	cache               *cache
+	deleteProcessingURL string
 
 	channel *amqp.Channel
 	queue   amqp.Queue
@@ -149,7 +179,7 @@ type cache struct {
 	mu          sync.Mutex
 	subscribers map[string][]page
 	language    map[string]string
-	alerts      map[string]userAlert
+	alerts      map[string][]string
 }
 
 type userAlert struct {
@@ -170,17 +200,107 @@ func newCache() *cache {
 		mu:          sync.Mutex{},
 		subscribers: make(map[string][]page),
 		language:    make(map[string]string),
-		alerts:      make(map[string]userAlert),
+		alerts:      make(map[string][]string),
 	}
 }
 
-func (c *cache) lastAlert(chatID int64) int {
-	k := keyGen(chatID)
-	alert, ok := c.alerts[k]
+func (c *cache) setAlert(chatID int64, currency, fiat, price, condition string) {
+	k := keyGenForAlert(chatID)
+	c.mu.Lock()
+	val, ok := c.alerts[k]
 	if !ok {
-		return 0
+		c.alerts[k] = make([]string, 0)
 	}
-	return alert.lastAlert
+	val = append(val, genAlertValue(currency, fiat, price, condition))
+	c.alerts[k] = val
+	c.mu.Unlock()
+}
+
+func genAlertValue(currency, fiat, price, condition string) string {
+	return fmt.Sprintf("%s_%s_%s_%s", currency, fiat, price, condition)
+}
+
+func (c *cache) setRawAlerts(chatID int64, alerts []string) {
+	k := keyGenForAlert(chatID)
+	c.mu.Lock()
+	c.alerts[k] = alerts
+	c.mu.Unlock()
+	return
+}
+
+func (c *cache) getRawAlerts(chatID int64) ([]string, bool) {
+	k := keyGenForAlert(chatID)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	val, ok := c.alerts[k]
+	if !ok {
+		return nil, ok
+	}
+	return val, true
+}
+
+func (c *cache) getAlerts(chatID int64) (a string, ok bool) {
+	k := keyGenForAlert(chatID)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	val, ok := c.alerts[k]
+	if !ok {
+		return "", ok
+	}
+
+	for i, v := range val {
+		alertItems := strings.Split(v, "_")
+		u := userAlert{
+			currency:  alertItems[0],
+			fiat:      alertItems[1],
+			price:     alertItems[2],
+			condition: alertItems[3],
+		}
+		one := fmt.Sprintf(
+			"%s %s %s %s",
+			strings.ToUpper(u.currency),
+			u.condition,
+			u.price,
+			strings.ToUpper(u.fiat),
+		)
+		a += fmt.Sprintf("№%s %s \n", strconv.Itoa(i+1), one)
+	}
+	return
+}
+
+func (c *cache) deleteAlert(chatID int64, alert string) (string, bool) {
+	var deleted string
+	k := keyGenForAlert(chatID)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	val, ok := c.alerts[k]
+	if !ok {
+		return "", true
+	}
+
+	numb, err := strconv.Atoi(alert)
+	if err != nil {
+		return "", false
+	}
+
+	//if len(val) - numb == 0 {
+	//	delete(c.alerts, k)
+	//	return "", true
+	//}
+
+	if len(val) >= numb {
+		deleted = val[numb-1]
+		val = append(val[:numb-1], val[numb-1+1:]...)
+		c.alerts[k] = val
+		return deleted, true
+	}
+
+	return "", false
+}
+
+func keyGenForAlert(chatID int64) string {
+	convChatID := strconv.FormatInt(chatID, 10)
+	return fmt.Sprintf("%s_%s", convChatID, "alerts")
 }
 
 func (c *cache) checkLanguage(username string) (bool, string) {
@@ -255,11 +375,12 @@ func CreateBot(p BotProvider) (*Bot, error) {
 	}
 
 	return &Bot{
-		api:       bot,
-		tgChannel: updates,
-		channel:   p.Channel,
-		queue:     p.Queue,
-		cache:     newCache(),
+		api:                 bot,
+		tgChannel:           updates,
+		channel:             p.Channel,
+		queue:               p.Queue,
+		cache:               newCache(),
+		deleteProcessingURL: os.Getenv("PROCESSING_API_URL"),
 	}, nil
 }
 
@@ -302,6 +423,33 @@ func (p *page) giveContent(page int, language string) (c string) {
 	}
 
 	return
+}
+
+// currency, fiat, price, condition
+// [Token(b.Currency)][Fiat(b.Fiat)][URL(b.URL
+func (b *Bot) deleteFromProcessCache(chatID int64, language, alert string) error {
+	convChatID := strconv.FormatInt(chatID, 10)
+	url := fmt.Sprintf("%s_%s", convChatID, language)
+	splitted := strings.Split(alert, "_")
+	block := processCache.ConditionBlock{
+		Currency: splitted[0],
+		Fiat:     splitted[1],
+		URL:      url,
+	}
+	return requestToDelete(block, b.deleteProcessingURL)
+}
+
+func requestToDelete(b processCache.ConditionBlock, url string) error {
+	rq := req.New()
+	resp, err := rq.Post(url+"delete", req.BodyJSON(&b))
+	if err != nil {
+		return err
+	}
+
+	if resp.Response().StatusCode != 201 {
+		return errors.New("response status: not ok")
+	}
+	return nil
 }
 
 func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
@@ -360,6 +508,58 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			case "language":
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, selectLanguageMsg(language))
 				msg.ReplyMarkup = languagesKeyBoard
+				if _, err := b.api.Send(msg); err != nil {
+					log.Println(err)
+				}
+				continue
+			case "alerts":
+				alerts, ok := b.cache.getAlerts(chatID)
+				var text string
+				if !ok || alerts == "" {
+					text = selectNoAlertMessage(language)
+				} else {
+					text = alerts
+				}
+				msg := tgbotapi.NewMessage(chatID, text)
+				if _, err := b.api.Send(msg); err != nil {
+					log.Println(err)
+				}
+				continue
+			case "delete":
+				cmd := update.Message.CommandArguments()
+				msg := tgbotapi.NewMessage(chatID, "")
+				check, err := strconv.ParseFloat(cmd, 10)
+				if cmd == "" || err != nil || check <= 0 {
+					msg.Text = selectAlertNumber(language)
+					if _, err := b.api.Send(msg); err != nil {
+						log.Println(err)
+					}
+					continue
+				}
+
+				deleted, ok := b.cache.deleteAlert(chatID, cmd)
+				if !ok {
+					msg = tgbotapi.NewMessage(chatID, selectAlertNumber(language))
+				} else {
+					alerts, ok := b.cache.getAlerts(chatID)
+					var text string
+					if !ok {
+						text = selectNoAlertMessage(language)
+					} else {
+						if alerts == "" {
+							text = selectNoAlertMessage(language)
+						} else {
+							text = alerts
+						}
+					}
+					if deleted != "" {
+						if err := b.deleteFromProcessCache(chatID, language, deleted); err != nil {
+							text = selectNoAlertMessage(language)
+						}
+					}
+					msg.Text = text
+				}
+
 				if _, err := b.api.Send(msg); err != nil {
 					log.Println(err)
 				}
@@ -448,6 +648,14 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			if pages[len(pages)-1].number == 4 {
 				alert := splitArgs(pages[1:], chatID, language)
 				var text string
+				b.cache.setAlert(
+					chatID,
+					pages[len(pages)-4].userInput,
+					pages[len(pages)-3].userInput,
+					pages[len(pages)-2].userInput,
+					pages[len(pages)-1].userInput,
+				)
+
 				if err := b.subscribeUser(alert); err != nil {
 					text = handleErrorInput(4, language)
 				} else {
@@ -508,6 +716,15 @@ func (b *Bot) AlertUser(c trueCondition) error {
 	if err != nil {
 		return err
 	}
+	value := genAlertValue(c.Values.Currency, c.Values.Fiat, c.Values.Price, c.Values.Condition)
+	alerts, _ := b.cache.getRawAlerts(chatID)
+	for i, a := range alerts {
+		if a == value {
+			alerts = append(alerts[:i], alerts[i+1:]...)
+			b.cache.setRawAlerts(chatID, alerts)
+		}
+	}
+
 	msg := tgbotapi.NewMessage(chatID, alertMsg)
 	_, err = b.api.Send(msg)
 	return err

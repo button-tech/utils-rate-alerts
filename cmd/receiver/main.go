@@ -9,6 +9,8 @@ import (
 	"github.com/jeyldii/rate-alerts/receiver"
 )
 
+const port = ":5050"
+
 func main() {
 	r, err := receiver.New()
 	if err != nil {
@@ -24,11 +26,23 @@ func main() {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 
+	go func() {
+		log.Printf("start http server on port:%s", port)
+		if err := r.Server.ListenAndServe(port); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	log.Println("Start processing")
 	go r.Processing()
 	go r.GetPrices()
 
 	defer r.Finalize()
+	defer func() {
+		if err := r.Server.Shutdown(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	stop := <-signalEx
 	log.Println("Received", stop)

@@ -48,6 +48,7 @@ func NewServer(ctx context.Context) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	server.WG.Add(1)
 	go b.ProcessingUpdates(ctx, &server.WG)
 	server.Bot = b
 
@@ -58,13 +59,13 @@ func NewServer(ctx context.Context) (*Server, error) {
 }
 
 func (s *Server) Finalize() {
-	log.Println("rabbitMQ connection close...")
-	if err := s.rabbitMQ.Conn.Close(); err != nil {
+	log.Println("rabbitMQ channel close...")
+	if err := s.ac.channel.Close(); err != nil {
 		return
 	}
 
-	log.Println("rabbitMQ channel close...")
-	if err := s.ac.channel.Close(); err != nil {
+	log.Println("rabbitMQ connection close...")
+	if err := s.rabbitMQ.Conn.Close(); err != nil {
 		return
 	}
 }
