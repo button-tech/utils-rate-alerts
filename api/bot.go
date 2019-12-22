@@ -107,12 +107,13 @@ func (c *cache) get(k int64) (ps []page, ok bool) {
 
 func (c *cache) back(k int64) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	ps := c.subscribers[k]
-	if len(ps) < 1 {
+	if len(ps) <= 1 {
+		delete(c.subscribers, k)
 		return
 	}
 	c.subscribers[k] = ps[:len(ps)-1]
-	c.mu.Unlock()
 }
 
 func (c *cache) delete(k int64) {
@@ -128,7 +129,7 @@ func CreateBot(p BotProvider) (*Bot, error) {
 	}
 
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 10
+	u.Timeout = 60
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
 		return nil, err
@@ -161,11 +162,13 @@ func (p *page) giveContent(page int) (c string) {
 		c = fmt.Sprintf(thirdPage, strings.ToUpper(p.userInput))
 	case 3:
 		c = fourthPage
+	case -1:
+		c = helpMessage
 	}
 	return
 }
 
-func (b *Bot) Processing(ctx context.Context, wg *sync.WaitGroup) {
+func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 	for update := range b.tgChannel {
 		select {
 		case <-ctx.Done():
@@ -177,19 +180,11 @@ func (b *Bot) Processing(ctx context.Context, wg *sync.WaitGroup) {
 				continue
 			}
 
-			if update.CallbackQuery != nil {
-				fmt.Print(update)
-
-				b.api.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
-
-				b.api.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data))
-			}
-
 			chatID := update.Message.Chat.ID
 			userText := update.Message.Text
 			switch update.Message.Command() {
 			case "alert":
-				if _, ok := b.cache.get(chatID); !ok {
+				if _, ok := b.cache.get(chatID); ok {
 					b.cache.delete(chatID)
 				}
 				p := page{userInput: "", number: 0}
@@ -219,6 +214,9 @@ func (b *Bot) Processing(ctx context.Context, wg *sync.WaitGroup) {
 					text = p.giveContent(len(pages) - 2)
 				}
 				msg := tgbotapi.NewMessage(chatID, text)
+				if len(pages) == 4 {
+					msg.ReplyMarkup = backKeyBoard
+				}
 				b.cache.back(chatID)
 				b.api.Send(msg)
 				continue
@@ -266,13 +264,7 @@ func (b *Bot) Processing(ctx context.Context, wg *sync.WaitGroup) {
 				number:    pages[len(pages)-1].number + 1,
 			}
 			pages = b.cache.set(chatID, p)
-			text := p.giveContent(len(pages) - 1)
-			msg := tgbotapi.NewMessage(chatID, text)
-			if len(pages) == 4 {
-				msg.ReplyMarkup = numericKeyboard
-			}
-			b.api.Send(msg)
-
+			var msg tgbotapi.MessageConfig
 			if len(pages) == 5 {
 				alert := splitArgs(pages[1:], chatID)
 				var text string
@@ -281,9 +273,17 @@ func (b *Bot) Processing(ctx context.Context, wg *sync.WaitGroup) {
 				} else {
 					text = alertMessage
 				}
-				b.api.Send(tgbotapi.NewMessage(chatID, text))
+				msg = tgbotapi.NewMessage(chatID, text)
+				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 				b.cache.delete(chatID)
+			} else {
+				text := p.giveContent(len(pages) - 1)
+				msg = tgbotapi.NewMessage(chatID, text)
+				if len(pages) == 4 {
+					msg.ReplyMarkup = conditionsKeyBoard
+				}
 			}
+			b.api.Send(msg)
 		}
 	}
 }
@@ -355,18 +355,8 @@ var conditionsKeyBoard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton(">"),
 		tgbotapi.NewKeyboardButton("<"),
 	),
-)
-
-var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonURL("1.com", "http://1.com"),
-		tgbotapi.NewInlineKeyboardButtonSwitch("2sw", "open 2"),
-		tgbotapi.NewInlineKeyboardButtonData("3", "3"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("4", "4"),
-		tgbotapi.NewInlineKeyboardButtonData("5", "5"),
-		tgbotapi.NewInlineKeyboardButtonData("6", "6"),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("back"),
 	),
 )
 

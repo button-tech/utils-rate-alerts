@@ -48,7 +48,7 @@ func NewServer(ctx context.Context) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	go b.Processing(ctx, &server.WG)
+	go b.ProcessingUpdates(ctx, &server.WG)
 	server.Bot = b
 
 	server.initBaseRoute()
