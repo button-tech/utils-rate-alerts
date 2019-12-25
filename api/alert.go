@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 
+	"github.com/jeyldii/rate-alerts/pkg/respond"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"
@@ -50,29 +51,29 @@ func (ac *apiController) alert(ctx *routing.Context) error {
 		return err
 	}
 
-	respondWithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "subscribe"})
+	respond.WithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "subscribe"})
 	return nil
 }
 
-func (ac *apiController) botAlert(ctx *routing.Context) error {
-	var r trueCondition
-	if err := json.Unmarshal(ctx.PostBody(), &r); err != nil {
-		return err
-	}
-	if err := ac.b.AlertUser(r); err != nil {
-		return err
-	}
-	respondWithJSON(ctx, fasthttp.StatusAccepted, map[string]interface{}{"result": "ok"})
-	return nil
-}
+//func (ac *apiController) botAlert(ctx *routing.Context) error {
+//	var r trueCondition
+//	if err := json.Unmarshal(ctx.PostBody(), &r); err != nil {
+//		return err
+//	}
+//	if err := ac.b.AlertUser(r); err != nil {
+//		return err
+//	}
+//	respondWithJSON(ctx, fasthttp.StatusAccepted, map[string]interface{}{"result": "ok"})
+//	return nil
+//}
 
 func (ac *apiController) healthCheck(ctx *routing.Context) error {
-	respondWithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "alive"})
+	respond.WithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "alive"})
 	return nil
 }
 
 func (s *Server) initAlertAPI() {
-	s.G.Post("/bot/alert", s.ac.botAlert)
+	//s.G.Post("/bot/alert", s.ac.botAlert)
 	s.G.Post("/alert", s.ac.alert)
 	s.G.Get("/health-check", s.ac.healthCheck)
 }

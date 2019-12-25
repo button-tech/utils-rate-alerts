@@ -1,30 +1,31 @@
-package api
+package telegram
 
 import (
+	"context"
 	"encoding/json"
-	"log"
-	"net/http"
-	"sync"
-	"time"
-
 	"github.com/jeyldii/rate-alerts/pkg/rabbitmq"
+	"github.com/jeyldii/rate-alerts/pkg/respond"
 	"github.com/pkg/errors"
 	routing "github.com/qiangxue/fasthttp-routing"
-	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"
+	"log"
+	"net/http"
+	"os"
+	"sync"
+	"time"
 )
 
 type Server struct {
-	Core *fasthttp.Server
-	WG   sync.WaitGroup
-	//Bot      *Bot
+	Core     *fasthttp.Server
+	WG       sync.WaitGroup
+	Bot      *Bot
 	R        *routing.Router
 	G        *routing.RouteGroup
 	ac       *apiController
 	rabbitMQ *rabbitmq.Instance
 }
 
-func NewServer() (*Server, error) {
+func NewServer(ctx context.Context) (*Server, error) {
 	server := Server{
 		R:  routing.New(),
 		WG: sync.WaitGroup{},
@@ -38,17 +39,17 @@ func NewServer() (*Server, error) {
 	}
 	server.rabbitMQ = r
 
-	//bp := SetupBot(r.Channel, r.Queue, os.Getenv("BOT_TOKEN"))
-	//b, err := CreateBot(bp)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//server.WG.Add(1)
-	//go b.ProcessingUpdates(ctx, &server.WG)
-	//server.Bot = b
+	bp := SetupBot(r.Channel, r.Queue, os.Getenv("BOT_TOKEN"))
+	b, err := CreateBot(bp)
+	if err != nil {
+		return nil, err
+	}
+	server.WG.Add(1)
+	go b.ProcessingUpdates(ctx, &server.WG)
+	server.Bot = b
 
 	server.initBaseRoute()
-	server.initAlertAPI()
+	server.initBotAPI()
 
 	return &server, nil
 }
@@ -86,9 +87,8 @@ func cors(ctx *routing.Context) error {
 
 		b, err := json.Marshal(err)
 		if err != nil {
-			respondWithJSON(ctx, fasthttp.StatusInternalServerError, map[string]interface{}{
-				"error": err},
-			)
+			respond.WithJSON(ctx, fasthttp.StatusInternalServerError, map[string]interface{}{"error": err})
+			return err
 		}
 		ctx.SetContentType("application/json")
 		ctx.SetBody(b)
@@ -105,24 +105,10 @@ func (s *Server) fs() {
 }
 
 func (s *Server) initBaseRoute() {
-	s.G = s.R.Group("/api/v1")
+	s.G = s.R.Group("/api/tel-bot")
 	s.ac = &apiController{
 		channel: s.rabbitMQ.Channel,
 		queue:   s.rabbitMQ.Queue,
-		//b:       s.Bot,
+		b:       s.Bot,
 	}
-}
-
-func respondWithJSON(ctx *routing.Context, code int, payload map[string]interface{}) {
-	ctx.SetContentType("application/json")
-	ctx.SetStatusCode(code)
-	if err := json.NewEncoder(ctx).Encode(payload); err != nil {
-		log.Println("write answer", err)
-	}
-}
-
-type apiController struct {
-	channel *amqp.Channel
-	queue   amqp.Queue
-	b       *Bot
 }

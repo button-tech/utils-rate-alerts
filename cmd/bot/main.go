@@ -1,18 +1,21 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jeyldii/rate-alerts/api"
+	"github.com/jeyldii/rate-alerts/bot/telegram"
 )
 
-const port = ":5001"
+const port = ":5055"
 
 func main() {
-	s, err := api.NewServer()
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	s, err := telegram.NewServer(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,6 +43,8 @@ func main() {
 	}()
 
 	stop := <-signalEx
-	log.Println("Received", stop)
+	cancel()
+	log.Println("API-BOT", stop)
+	s.WG.Wait()
 	log.Println("Waiting for all jobs to stop")
 }

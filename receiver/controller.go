@@ -2,10 +2,10 @@ package receiver
 
 import (
 	"encoding/json"
+	"github.com/jeyldii/rate-alerts/pkg/respond"
 	"github.com/jeyldii/rate-alerts/pkg/storage/cache"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
-	"log"
 	"net/http"
 )
 
@@ -22,20 +22,12 @@ func (c *controller) deleteFromProcessing(ctx *routing.Context) error {
 	if err := c.store.Delete(b); err != nil {
 		return err
 	}
-	respondWithJSON(ctx, fasthttp.StatusCreated, map[string]interface{}{"result": "ok"})
+	respond.WithJSON(ctx, fasthttp.StatusCreated, map[string]interface{}{"result": "ok"})
 	return nil
 }
 
 func (r *Receiver) mount() {
 	r.g.Post("/delete", r.c.deleteFromProcessing)
-}
-
-func respondWithJSON(ctx *routing.Context, code int, payload map[string]interface{}) {
-	ctx.SetContentType("application/json")
-	ctx.SetStatusCode(code)
-	if err := json.NewEncoder(ctx).Encode(payload); err != nil {
-		log.Println("write answer", err)
-	}
 }
 
 func cors(ctx *routing.Context) error {
@@ -59,9 +51,8 @@ func cors(ctx *routing.Context) error {
 
 		b, err := json.Marshal(err)
 		if err != nil {
-			respondWithJSON(ctx, fasthttp.StatusInternalServerError, map[string]interface{}{
-				"error": err},
-			)
+			respond.WithJSON(ctx, fasthttp.StatusInternalServerError, map[string]interface{}{"error": err})
+			return nil
 		}
 		ctx.SetContentType("application/json")
 		ctx.SetBody(b)
