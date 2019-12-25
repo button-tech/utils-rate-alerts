@@ -15,9 +15,8 @@ import (
 )
 
 type Server struct {
-	Core *fasthttp.Server
-	WG   sync.WaitGroup
-	//Bot      *Bot
+	Core     *fasthttp.Server
+	WG       sync.WaitGroup
 	R        *routing.Router
 	G        *routing.RouteGroup
 	ac       *apiController
@@ -37,15 +36,6 @@ func NewServer() (*Server, error) {
 		return nil, errors.Wrap(err, "rabbitMQ instance declaration")
 	}
 	server.rabbitMQ = r
-
-	//bp := SetupBot(r.Channel, r.Queue, os.Getenv("BOT_TOKEN"))
-	//b, err := CreateBot(bp)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//server.WG.Add(1)
-	//go b.ProcessingUpdates(ctx, &server.WG)
-	//server.Bot = b
 
 	server.initBaseRoute()
 	server.initAlertAPI()
@@ -109,7 +99,6 @@ func (s *Server) initBaseRoute() {
 	s.ac = &apiController{
 		channel: s.rabbitMQ.Channel,
 		queue:   s.rabbitMQ.Queue,
-		//b:       s.Bot,
 	}
 }
 
@@ -124,5 +113,4 @@ func respondWithJSON(ctx *routing.Context, code int, payload map[string]interfac
 type apiController struct {
 	channel *amqp.Channel
 	queue   amqp.Queue
-	b       *Bot
 }
