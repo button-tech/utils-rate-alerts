@@ -187,7 +187,6 @@ type userAlert struct {
 	condition string
 	price     string
 	fiat      string
-	lastAlert int
 }
 
 type page struct {
@@ -225,7 +224,6 @@ func (c *cache) setRawAlerts(chatID int64, alerts []string) {
 	c.mu.Lock()
 	c.alerts[k] = alerts
 	c.mu.Unlock()
-	return
 }
 
 func (c *cache) getRawAlerts(chatID int64) ([]string, bool) {
