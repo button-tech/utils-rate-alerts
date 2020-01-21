@@ -1,8 +1,8 @@
-package telegram
+package bot
 
 import (
 	"encoding/json"
-	"github.com/jeyldii/rate-alerts/pkg/respond"
+	"github.com/button-tech/utils-rate-alerts/pkg/respond"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"

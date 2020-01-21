@@ -1,10 +1,10 @@
-package telegram
+package bot
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/jeyldii/rate-alerts/pkg/rabbitmq"
-	"github.com/jeyldii/rate-alerts/pkg/respond"
+	"github.com/button-tech/utils-rate-alerts/pkg/rabbitmq"
+	"github.com/button-tech/utils-rate-alerts/pkg/respond"
 	"github.com/pkg/errors"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"

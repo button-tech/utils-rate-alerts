@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jeyldii/rate-alerts/api"
+	"github.com/button-tech/utils-rate-alerts/api"
 )
 
 const port = ":5001"

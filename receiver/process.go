@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/button-tech/utils-rate-alerts/pkg/storage/cache"
 	"github.com/imroc/req"
-	"github.com/jeyldii/rate-alerts/pkg/storage/cache"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"

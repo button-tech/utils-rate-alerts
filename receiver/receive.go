@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/jeyldii/rate-alerts/pkg/rabbitmq"
-	"github.com/jeyldii/rate-alerts/pkg/storage/cache"
+	"github.com/button-tech/utils-rate-alerts/pkg/rabbitmq"
+	"github.com/button-tech/utils-rate-alerts/pkg/storage/cache"
 	"github.com/pkg/errors"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"

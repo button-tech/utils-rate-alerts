@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jeyldii/rate-alerts/bot/telegram"
+	"github.com/button-tech/utils-rate-alerts/bot"
 )
 
 const port = ":5055"
@@ -15,7 +15,7 @@ const port = ":5055"
 func main() {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-	s, err := telegram.NewServer(ctx)
+	s, err := bot.NewServer(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

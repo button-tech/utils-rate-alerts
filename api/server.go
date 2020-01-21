@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jeyldii/rate-alerts/pkg/rabbitmq"
+	"github.com/button-tech/utils-rate-alerts/pkg/rabbitmq"
 	"github.com/pkg/errors"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"

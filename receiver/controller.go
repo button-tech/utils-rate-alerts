@@ -2,8 +2,8 @@ package receiver
 
 import (
 	"encoding/json"
-	"github.com/jeyldii/rate-alerts/pkg/respond"
-	"github.com/jeyldii/rate-alerts/pkg/storage/cache"
+	"github.com/button-tech/utils-rate-alerts/pkg/respond"
+	"github.com/button-tech/utils-rate-alerts/pkg/storage/cache"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
 	"net/http"

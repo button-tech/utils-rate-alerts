@@ -1,4 +1,4 @@
-package telegram
+package bot
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
+	processCache "github.com/button-tech/utils-rate-alerts/pkg/storage/cache"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	processCache "github.com/jeyldii/rate-alerts/pkg/storage/cache"
 	"github.com/streadway/amqp"
 )
 
