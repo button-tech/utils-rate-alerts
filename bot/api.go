@@ -16,7 +16,7 @@ type apiController struct {
 }
 
 func (ac *apiController) botAlert(ctx *routing.Context) error {
-	var r trueCondition
+	var r t.TrueCondition
 	if err := json.Unmarshal(ctx.PostBody(), &r); err != nil {
 		return err
 	}
@@ -36,24 +36,4 @@ func (ac *apiController) healthCheck(ctx *routing.Context) error {
 func (s *Server) initBotAPI() {
 	s.G.Post("/alert", s.ac.botAlert)
 	s.G.Get("/health-check", s.ac.healthCheck)
-}
-
-type alert struct {
-	Currency  string `json:"currency"`
-	Price     string `json:"price"`
-	Fiat      string `json:"fiat"`
-	Condition string `json:"condition"`
-	URL       string `json:"url"`
-}
-
-type trueCondition struct {
-	Result string `json:"result"`
-	Values struct {
-		Currency     string `json:"currency"`
-		Condition    string `json:"condition"`
-		Fiat         string `json:"fiat"`
-		Price        string `json:"price"`
-		CurrentPrice string `json:"currentPrice"`
-	} `json:"values"`
-	URL string `json:"url"`
 }

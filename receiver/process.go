@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/button-tech/utils-rate-alerts/pkg/storage/cache"
+	t "github.com/button-tech/utils-rate-alerts/types"
 	"github.com/imroc/req"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
@@ -18,24 +19,6 @@ import (
 )
 
 const trueConditionResult = "true"
-
-type requestBlocks struct {
-	Tokens     []string `json:"tokens"`
-	Currencies []string `json:"currencies"`
-	API        string   `json:"api"`
-}
-
-type trueCondition struct {
-	Result string `json:"result"`
-	Values struct {
-		Currency     string `json:"currency"`
-		Condition    string `json:"condition"`
-		Fiat         string `json:"fiat"`
-		Price        string `json:"price"`
-		CurrentPrice string `json:"currentPrice"`
-	} `json:"values"`
-	URL string `json:"url"`
-}
 
 func (r *Receiver) deliveryChannel() (<-chan amqp.Delivery, error) {
 	msgs, err := r.rabbitMQ.Channel.Consume(
@@ -75,9 +58,9 @@ func (r *Receiver) Processing() {
 const crc = "crc"
 
 func (r *Receiver) GetPrices() {
-	t := time.NewTicker(time.Minute * 1)
-	for ; ; <-t.C {
-		var blocks requestBlocks
+	ticker := time.NewTicker(time.Minute * 1)
+	for ; ; <-ticker.C {
+		var blocks t.RequestBlocks
 		blocks.API = crc
 
 		for k := range r.checkMap(&blocks) {
@@ -90,7 +73,7 @@ func (r *Receiver) GetPrices() {
 	}
 }
 
-func (r *Receiver) checkMap(blocks *requestBlocks) map[string]struct{} {
+func (r *Receiver) checkMap(blocks *t.RequestBlocks) map[string]struct{} {
 	stored := r.store.Get()
 
 	m := make(map[string]struct{})
@@ -106,7 +89,7 @@ func (r *Receiver) checkMap(blocks *requestBlocks) map[string]struct{} {
 	return m
 }
 
-func (r *Receiver) getPrices(b *requestBlocks) error {
+func (r *Receiver) getPrices(b *t.RequestBlocks) error {
 	gotPrices, err := doRequest(b)
 	if err != nil {
 		return err
@@ -119,7 +102,7 @@ func (r *Receiver) getPrices(b *requestBlocks) error {
 	return nil
 }
 
-func doRequest(b *requestBlocks) ([]*parsedPrices, error) {
+func doRequest(b *t.RequestBlocks) ([]*parsedPrices, error) {
 	rq := req.New()
 	resp, err := rq.Post(os.Getenv("PRICES"), req.BodyJSON(&b))
 	if err != nil {
@@ -293,7 +276,7 @@ func (r *Receiver) makeURL(b cache.ConditionBlock) (url string) {
 	return
 }
 
-func checkURL(payload *trueCondition, url string) error {
+func checkURL(payload *t.TrueCondition, url string) error {
 	rq := req.New()
 	resp, err := rq.Post(url, req.BodyJSON(&payload))
 	if err != nil {
@@ -307,8 +290,8 @@ func checkURL(payload *trueCondition, url string) error {
 	return nil
 }
 
-func executedCondition(block cache.ConditionBlock) *trueCondition {
-	return &trueCondition{
+func executedCondition(block cache.ConditionBlock) *t.TrueCondition {
+	return &t.TrueCondition{
 		Result: trueConditionResult,
 		Values: struct {
 			Currency     string `json:"currency"`

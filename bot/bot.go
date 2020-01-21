@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	processCache "github.com/button-tech/utils-rate-alerts/pkg/storage/cache"
+	t "github.com/button-tech/utils-rate-alerts/types"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/streadway/amqp"
 )
@@ -687,7 +688,7 @@ func help(id int64, language string) tgbotapi.MessageConfig {
 	return tgbotapi.NewMessage(id, text)
 }
 
-func completedAlertMessage(c trueCondition, language string) string {
+func completedAlertMessage(c t.TrueCondition, language string) string {
 	var format string
 	uc := strings.ToUpper(c.Values.Currency)
 	switch language {
@@ -707,7 +708,7 @@ func completedAlertMessage(c trueCondition, language string) string {
 	)
 }
 
-func (b *Bot) AlertUser(c trueCondition) error {
+func (b *Bot) AlertUser(c t.TrueCondition) error {
 	userSettings := strings.Split(c.URL, "_")
 	alertMsg := completedAlertMessage(c, userSettings[1])
 	chatID, err := strconv.ParseInt(userSettings[0], 10, 64)
@@ -728,7 +729,7 @@ func (b *Bot) AlertUser(c trueCondition) error {
 	return err
 }
 
-func (b *Bot) subscribeUser(args alert) error {
+func (b *Bot) subscribeUser(args t.Alert) error {
 	body, err := json.Marshal(&args)
 	if err != nil {
 		return err
@@ -747,10 +748,10 @@ func (b *Bot) subscribeUser(args alert) error {
 	return err
 }
 
-func splitArgs(args []page, chatID int64, language string) alert {
+func splitArgs(args []page, chatID int64, language string) t.Alert {
 	convChatID := strconv.FormatInt(chatID, 10)
 	l := fmt.Sprintf("%s_%s", convChatID, language)
-	return alert{
+	return t.Alert{
 		Currency:  args[0].userInput,
 		Fiat:      args[1].userInput,
 		Price:     args[2].userInput,
