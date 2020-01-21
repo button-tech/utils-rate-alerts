@@ -1,18 +1,21 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jeyldii/rate-alerts/receiver"
+	"github.com/jeyldii/rate-alerts/bot/telegram"
 )
 
-const port = ":5050"
+const port = ":5055"
 
 func main() {
-	r, err := receiver.New()
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	s, err := telegram.NewServer(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,23 +31,20 @@ func main() {
 
 	go func() {
 		log.Printf("start http server on port:%s", port)
-		if err := r.Server.ListenAndServe(port); err != nil {
+		if err := s.Core.ListenAndServe(port); err != nil {
 			log.Fatal(err)
 		}
 	}()
-
-	log.Println("Start processing")
-	go r.Processing()
-	go r.GetPrices()
-
-	defer r.Finalize()
+	defer s.Finalize()
 	defer func() {
-		if err := r.Server.Shutdown(); err != nil {
+		if err := s.Core.Shutdown(); err != nil {
 			log.Fatal(err)
 		}
 	}()
 
 	stop := <-signalEx
-	log.Println("Received", stop)
+	cancel()
+	log.Println("API-BOT", stop)
+	s.WG.Wait()
 	log.Println("Waiting for all jobs to stop")
 }

@@ -2,18 +2,18 @@ package receiver
 
 import (
 	"encoding/json"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fastjson"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/button-tech/rate-alerts/storage"
 	"github.com/imroc/req"
+	"github.com/jeyldii/rate-alerts/pkg/storage/cache"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fastjson"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -28,12 +28,13 @@ type requestBlocks struct {
 type trueCondition struct {
 	Result string `json:"result"`
 	Values struct {
-		Currency  string `json:"currency"`
-		Condition string `json:"condition"`
-		Fiat      string `json:"fiat"`
-		Price     string `json:"price"`
+		Currency     string `json:"currency"`
+		Condition    string `json:"condition"`
+		Fiat         string `json:"fiat"`
+		Price        string `json:"price"`
+		CurrentPrice string `json:"currentPrice"`
 	} `json:"values"`
-	url string
+	URL string `json:"url"`
 }
 
 func (r *Receiver) deliveryChannel() (<-chan amqp.Delivery, error) {
@@ -61,24 +62,23 @@ func (r *Receiver) Processing() {
 	}
 
 	for msg := range c {
-		var block storage.ConditionBlock
+		var block cache.ConditionBlock
 		if err := json.Unmarshal(msg.Body, &block); err != nil {
 			log.Println(err)
 			continue
 		}
 		r.store.Set(block)
 	}
-
 	select {}
 }
 
-const cmc = "cmc"
+const crc = "crc"
 
 func (r *Receiver) GetPrices() {
-	t := time.NewTicker(time.Minute * 4)
+	t := time.NewTicker(time.Minute * 1)
 	for ; ; <-t.C {
 		var blocks requestBlocks
-		blocks.API = cmc
+		blocks.API = crc
 
 		for k := range r.checkMap(&blocks) {
 			blocks.Currencies = append(blocks.Currencies, k)
@@ -201,11 +201,14 @@ func trim(s string) string {
 
 func (r *Receiver) schedule(pp []*parsedPrices) error {
 	stored := r.store.Get()
+	if stored == nil {
+		return errors.New("store is nil")
+	}
 
-	var requests []storage.ConditionBlock
+	var requests []cache.ConditionBlock
 	for _, p := range pp {
 		for token, price := range p.rates {
-			urlMap := stored[storage.Token(token)][storage.Fiat(p.currency)]
+			urlMap := stored[cache.Token(token)][cache.Fiat(p.currency)]
 			for _, block := range urlMap {
 				parsedFloats, err := parseFloat(price, block.Price)
 				if err != nil {
@@ -219,6 +222,7 @@ func (r *Receiver) schedule(pp []*parsedPrices) error {
 					block.Condition == "<" && currentPrice < conditionPrice ||
 					block.Condition == ">=" && currentPrice >= conditionPrice ||
 					block.Condition == "<=" && currentPrice <= conditionPrice {
+					block.CurrentPrice = price
 					requests = append(requests, block)
 				}
 			}
@@ -259,13 +263,14 @@ func parseFloat(f, s string) ([]float64, error) {
 	return floats, nil
 }
 
-func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
+func (r *Receiver) checkStatusAccepted(block cache.ConditionBlock) error {
 	var err error
 	t := time.NewTicker(time.Second * 3)
 
 	counter := 0
+	url := r.makeURL(block)
 	for ; counter < 4; <-t.C {
-		if err = checkURL(executedCondition(block)); err != nil {
+		if err = checkURL(executedCondition(block), url); err != nil {
 			counter++
 			continue
 		}
@@ -279,9 +284,18 @@ func (r *Receiver) checkStatusAccepted(block storage.ConditionBlock) error {
 	return err
 }
 
-func checkURL(payload *trueCondition) error {
+func (r *Receiver) makeURL(b cache.ConditionBlock) (url string) {
+	if strings.HasPrefix("http", b.URL) {
+		url = b.URL
+	} else {
+		url = r.botAlertURL
+	}
+	return
+}
+
+func checkURL(payload *trueCondition, url string) error {
 	rq := req.New()
-	resp, err := rq.Post(payload.url, req.BodyJSON(&payload))
+	resp, err := rq.Post(url, req.BodyJSON(&payload))
 	if err != nil {
 		return errors.Wrap(err, "checkURL")
 	}
@@ -293,20 +307,22 @@ func checkURL(payload *trueCondition) error {
 	return nil
 }
 
-func executedCondition(block storage.ConditionBlock) *trueCondition {
+func executedCondition(block cache.ConditionBlock) *trueCondition {
 	return &trueCondition{
 		Result: trueConditionResult,
 		Values: struct {
-			Currency  string `json:"currency"`
-			Condition string `json:"condition"`
-			Fiat      string `json:"fiat"`
-			Price     string `json:"price"`
+			Currency     string `json:"currency"`
+			Condition    string `json:"condition"`
+			Fiat         string `json:"fiat"`
+			Price        string `json:"price"`
+			CurrentPrice string `json:"currentPrice"`
 		}{
-			Currency:  block.Currency,
-			Condition: block.Condition,
-			Fiat:      block.Fiat,
-			Price:     block.Price,
+			Currency:     block.Currency,
+			Condition:    block.Condition,
+			Fiat:         block.Fiat,
+			Price:        block.Price,
+			CurrentPrice: block.CurrentPrice,
 		},
-		url: block.URL,
+		URL: block.URL,
 	}
 }

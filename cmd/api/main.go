@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/button-tech/rate-alerts/api"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/jeyldii/rate-alerts/api"
 )
 
-const port = ":5000"
+const port = ":5001"
 
 func main() {
 	s, err := api.NewServer()
