@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"github.com/button-tech/utils-rate-alerts/pkg/respond"
 	"github.com/button-tech/utils-rate-alerts/pkg/storage/cache"
-	routing "github.com/qiangxue/fasthttp-routing"
+	t "github.com/button-tech/utils-rate-alerts/types"
+	"github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
 	"net/http"
 )
@@ -22,7 +23,7 @@ func (c *controller) deleteFromProcessing(ctx *routing.Context) error {
 	if err := c.store.Delete(b); err != nil {
 		return err
 	}
-	respond.WithJSON(ctx, fasthttp.StatusCreated, map[string]interface{}{"result": "ok"})
+	respond.WithJSON(ctx, fasthttp.StatusCreated, t.Payload{"result": "ok"})
 	return nil
 }
 
@@ -51,7 +52,7 @@ func cors(ctx *routing.Context) error {
 
 		b, err := json.Marshal(err)
 		if err != nil {
-			respond.WithJSON(ctx, fasthttp.StatusInternalServerError, map[string]interface{}{"error": err})
+			respond.WithJSON(ctx, fasthttp.StatusInternalServerError, t.Payload{"error": err})
 			return nil
 		}
 		ctx.SetContentType("application/json")

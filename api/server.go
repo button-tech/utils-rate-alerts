@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/button-tech/utils-rate-alerts/pkg/rabbitmq"
+	t "github.com/button-tech/utils-rate-alerts/types"
 	"github.com/pkg/errors"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"
@@ -76,9 +77,7 @@ func cors(ctx *routing.Context) error {
 
 		b, err := json.Marshal(err)
 		if err != nil {
-			respondWithJSON(ctx, fasthttp.StatusInternalServerError, map[string]interface{}{
-				"error": err},
-			)
+			respondWithJSON(ctx, fasthttp.StatusInternalServerError, t.Payload{"error": err})
 		}
 		ctx.SetContentType("application/json")
 		ctx.SetBody(b)
@@ -102,7 +101,7 @@ func (s *Server) initBaseRoute() {
 	}
 }
 
-func respondWithJSON(ctx *routing.Context, code int, payload map[string]interface{}) {
+func respondWithJSON(ctx *routing.Context, code int, payload t.Payload) {
 	ctx.SetContentType("application/json")
 	ctx.SetStatusCode(code)
 	if err := json.NewEncoder(ctx).Encode(payload); err != nil {

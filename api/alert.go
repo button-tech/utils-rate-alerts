@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/button-tech/utils-rate-alerts/pkg/respond"
+	t "github.com/button-tech/utils-rate-alerts/types"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"
@@ -16,7 +17,6 @@ type alert struct {
 	Condition string `json:"condition"`
 	URL       string `json:"url"`
 }
-
 
 func (ac *apiController) alert(ctx *routing.Context) error {
 	var (
@@ -40,12 +40,12 @@ func (ac *apiController) alert(ctx *routing.Context) error {
 		return err
 	}
 
-	respond.WithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "subscribe"})
+	respond.WithJSON(ctx, fasthttp.StatusOK, t.Payload{"result": "subscribe"})
 	return nil
 }
 
 func (ac *apiController) healthCheck(ctx *routing.Context) error {
-	respond.WithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "alive"})
+	respond.WithJSON(ctx, fasthttp.StatusOK, t.Payload{"result": "alive"})
 	return nil
 }
 

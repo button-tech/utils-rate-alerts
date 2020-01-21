@@ -3,6 +3,7 @@ package bot
 import (
 	"encoding/json"
 	"github.com/button-tech/utils-rate-alerts/pkg/respond"
+	t "github.com/button-tech/utils-rate-alerts/types"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/streadway/amqp"
 	"github.com/valyala/fasthttp"
@@ -20,15 +21,15 @@ func (ac *apiController) botAlert(ctx *routing.Context) error {
 		return err
 	}
 	if err := ac.b.AlertUser(r); err != nil {
-		respond.WithJSON(ctx, fasthttp.StatusBadRequest, map[string]interface{}{"error": err})
+		respond.WithJSON(ctx, fasthttp.StatusBadRequest, t.Payload{"error": err})
 		return nil
 	}
-	respond.WithJSON(ctx, fasthttp.StatusAccepted, map[string]interface{}{"result": "ok"})
+	respond.WithJSON(ctx, fasthttp.StatusAccepted, t.Payload{"result": "ok"})
 	return nil
 }
 
 func (ac *apiController) healthCheck(ctx *routing.Context) error {
-	respond.WithJSON(ctx, fasthttp.StatusOK, map[string]interface{}{"result": "alive"})
+	respond.WithJSON(ctx, fasthttp.StatusOK, t.Payload{"result": "alive"})
 	return nil
 }
 

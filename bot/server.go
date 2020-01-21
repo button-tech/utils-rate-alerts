@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/button-tech/utils-rate-alerts/pkg/rabbitmq"
 	"github.com/button-tech/utils-rate-alerts/pkg/respond"
+	t "github.com/button-tech/utils-rate-alerts/types"
 	"github.com/pkg/errors"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
@@ -87,7 +88,7 @@ func cors(ctx *routing.Context) error {
 
 		b, err := json.Marshal(err)
 		if err != nil {
-			respond.WithJSON(ctx, fasthttp.StatusInternalServerError, map[string]interface{}{"error": err})
+			respond.WithJSON(ctx, fasthttp.StatusInternalServerError, t.Payload{"error": err})
 			return err
 		}
 		ctx.SetContentType("application/json")
