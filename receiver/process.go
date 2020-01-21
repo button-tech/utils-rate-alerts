@@ -90,7 +90,15 @@ func (r *Receiver) checkMap(blocks *t.RequestBlocks) map[string]struct{} {
 }
 
 func (r *Receiver) getPrices(b *t.RequestBlocks) error {
-	gotPrices, err := doRequest(b)
+	resp, err := req.Post(os.Getenv("PRICES"), req.BodyJSON(&b))
+	if err != nil {
+		return err
+	}
+	if resp.Response().StatusCode != fasthttp.StatusOK {
+		return errors.Wrap(errors.New("No http statusOK"), "responseStatusCode")
+	}
+
+	gotPrices, err := respFastJSON(resp.Bytes())
 	if err != nil {
 		return err
 	}
@@ -100,24 +108,6 @@ func (r *Receiver) getPrices(b *t.RequestBlocks) error {
 	}
 
 	return nil
-}
-
-func doRequest(b *t.RequestBlocks) ([]*parsedPrices, error) {
-	rq := req.New()
-	resp, err := rq.Post(os.Getenv("PRICES"), req.BodyJSON(&b))
-	if err != nil {
-		return nil, err
-	}
-	if resp.Response().StatusCode != fasthttp.StatusOK {
-		return nil, errors.Wrap(errors.New("No http statusOK"), "responseStatusCode")
-	}
-
-	ps, err := respFastJSON(resp.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	return ps, nil
 }
 
 type parsedPrices struct {
@@ -248,11 +238,11 @@ func parseFloat(f, s string) ([]float64, error) {
 
 func (r *Receiver) checkStatusAccepted(block cache.ConditionBlock) error {
 	var err error
-	t := time.NewTicker(time.Second * 3)
+	ticker := time.NewTicker(time.Second * 3)
 
 	counter := 0
 	url := r.makeURL(block)
-	for ; counter < 4; <-t.C {
+	for ; counter < 4; <-ticker.C {
 		if err = checkURL(executedCondition(block), url); err != nil {
 			counter++
 			continue
