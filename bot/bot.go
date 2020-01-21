@@ -18,6 +18,35 @@ import (
 	"os"
 )
 
+type userAlert struct {
+	currency  string
+	condition string
+	price     string
+	fiat      string
+}
+
+type page struct {
+	number    int
+	userInput string
+}
+
+func keyGenForAlert(chatID int64) string {
+	convChatID := strconv.FormatInt(chatID, 10)
+	return fmt.Sprintf("%s_%s", convChatID, "alerts")
+}
+
+func keyGen(k int64) string {
+	return strconv.FormatInt(k, 10)
+}
+
+func SetupBot(c *amqp.Channel, q amqp.Queue, t string) BotProvider {
+	return BotProvider{
+		Channel:  c,
+		Queue:    q,
+		BotToken: t,
+	}
+}
+
 type BotProvider struct {
 	Channel      *amqp.Channel
 	Queue        amqp.Queue
@@ -97,58 +126,6 @@ func (b *Bot) deleteFromProcessCache(chatID int64, language, alert string) error
 
 	return nil
 
-}
-
-func CreateBot(p BotProvider) (*Bot, error) {
-	bot, err := tgbotapi.NewBotAPI(p.BotToken)
-	if err != nil {
-		return nil, err
-	}
-
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	updates, err := bot.GetUpdatesChan(u)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Bot{
-		api:                 bot,
-		tgChannel:           updates,
-		channel:             p.Channel,
-		queue:               p.Queue,
-		cache:               newCache(),
-		deleteProcessingURL: os.Getenv("PROCESSING_API_URL"),
-	}, nil
-}
-
-type userAlert struct {
-	currency  string
-	condition string
-	price     string
-	fiat      string
-}
-
-type page struct {
-	number    int
-	userInput string
-}
-
-func keyGenForAlert(chatID int64) string {
-	convChatID := strconv.FormatInt(chatID, 10)
-	return fmt.Sprintf("%s_%s", convChatID, "alerts")
-}
-
-func keyGen(k int64) string {
-	return strconv.FormatInt(k, 10)
-}
-
-func SetupBot(c *amqp.Channel, q amqp.Queue, t string) BotProvider {
-	return BotProvider{
-		Channel:  c,
-		Queue:    q,
-		BotToken: t,
-	}
 }
 
 func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
@@ -375,6 +352,29 @@ func (b *Bot) ProcessingUpdates(ctx context.Context, wg *sync.WaitGroup) {
 			}
 		}
 	}
+}
+
+func CreateBot(p BotProvider) (*Bot, error) {
+	bot, err := tgbotapi.NewBotAPI(p.BotToken)
+	if err != nil {
+		return nil, err
+	}
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+	updates, err := bot.GetUpdatesChan(u)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Bot{
+		api:                 bot,
+		tgChannel:           updates,
+		channel:             p.Channel,
+		queue:               p.Queue,
+		cache:               newCache(),
+		deleteProcessingURL: os.Getenv("PROCESSING_API_URL"),
+	}, nil
 }
 
 func completedAlertMessage(c t.TrueCondition, language string) string {
